@@ -231,9 +231,11 @@ For posts that *don't* hit the crisis tripwire:
 
 - Submit → Supabase Edge Function → OpenAI `/moderations` endpoint.
 - Categories: hate, harassment, sexual content involving minors, violence, self-harm, doxxing.
-- If any category exceeds threshold → post rejected with soft message:
-  > *"This story didn't pass our quiet-space check. If you think this was a mistake, you can edit and try again."*
+- If any category exceeds threshold → post rejected (still in the composer, never published) with soft message:
+  > *"This story didn't pass our quiet-space check. If you think this was a mistake, revise your story and try again."*
 - Audit row written to `moderation_events`.
+
+(This pre-publish revision case is the *only* form of "editing" Sulat supports. Once a story is published, it's permanent — see Section 3.)
 
 ### Layer 2b: Crisis Confirmation (cheap paid)
 
@@ -282,6 +284,10 @@ OpenAI `/moderations` flags `violence/threatening` separately. Posts in that cat
 | 1,000 | $0 | $0 | ~$0.03 | **< $0.10** |
 | 10,000 | $0 | $0 | ~$0.30 | **< $1** |
 | 100,000 | $0 | $0 | ~$3 | **< $10** |
+
+### Known Limitations
+
+- **Crisis tripwire is English + Filipino only in v1.** Posts in other languages still go through OpenAI `/moderations` (which is multilingual and catches self-harm content), but will not receive the Anthropic crisis-confirmation path or the gentle hotline overlay — they'd be soft-rejected by Layer 2a instead. As we add UI localizations (Tagalog, then Cebuano per "Future Plans"), we extend the tripwire phrase list accordingly.
 
 ### Out of Scope for v1
 
@@ -334,6 +340,12 @@ interface SulatTheme {
 - "Match system" option auto-picks Lantern Glow at night, Pastel Dawn during the day.
 
 ### Memory Transition (6-month threshold)
+
+> **Naming note:** "Memory" appears in two distinct contexts:
+> - **🕯️ Memory mood** — one of the 8 mood categories an author picks at *post time* to honor someone or something missed. This is content-driven and chosen by the author.
+> - **Memory status** (this section) — a *lifecycle state* (`is_memory = true`) any story automatically enters at 6 months old, regardless of mood.
+>
+> A 🕯️ Memory-mood post becomes a Memory-status story at 6 months (gaining the lifecycle behaviors below) but a 🌱 Hopeful-mood post does too. They're orthogonal — the mood describes content, the status describes age.
 
 When a story crosses **180 days old**:
 
