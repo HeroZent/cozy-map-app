@@ -56,7 +56,7 @@ serve(async (req) => {
     .select('id')
     .single();
 
-  if (error) return new Response(error.message, { status: 400, headers: cors });
+  if (error) return new Response(error.message, { status: 500, headers: cors });
 
   return new Response(JSON.stringify({ id: data.id }), {
     status: 201,
