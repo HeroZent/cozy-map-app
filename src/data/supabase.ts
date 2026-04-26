@@ -3,12 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!url || !anonKey) {
-  throw new Error('Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY in .env.local');
-}
+// EXPO_PUBLIC_* vars are inlined by Metro into the client bundle at build time.
+// During Expo's static rendering step (SSR/Node.js), they resolve to undefined —
+// so we fall back to empty strings to avoid crashing the build.
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
