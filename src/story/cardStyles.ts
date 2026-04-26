@@ -157,5 +157,5 @@ export const CARD_STYLES: CardStyleDef[] = [
 export const DEFAULT_CARD_STYLE: CardStyleId = 'a';
 
 export function getCardStyle(id: string): CardStyleDef {
-  return CARD_STYLES.find((s) => s.id === id) ?? CARD_STYLES[0];
+  return CARD_STYLES.find((s) => s.id === id) ?? CARD_STYLES[0]!;
 }

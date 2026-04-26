@@ -7,7 +7,7 @@ import { supabase } from '@/data/supabase';
 import { getMoodById } from '@/moods/catalog';
 import type { Story } from '@/data/types';
 
-const SELECT = 'id, author_id, mood, body, location_label, pin_mode, language, status, is_memory, created_at, lat, lng';
+const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, created_at, lat, lng';
 
 export interface LanternSheetProps {
   onClose: () => void;
@@ -42,6 +42,7 @@ export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: Lante
             reaction_counts: {},
             my_reactions: [],
             reply_count: 0,
+            card_style: r.card_style || 'a',
           })) as Story[],
         );
       }

@@ -7,6 +7,7 @@ export type PinMode = 'gps' | 'dropped' | 'city';
 export type StoryStatus = 'live' | 'hidden' | 'flagged' | 'removed';
 
 import type { ReactionEmoji } from '@/reactions/catalog';
+import type { CardStyleId } from '@/story/cardStyles';
 export type { ReactionEmoji };
 
 export interface Story {
@@ -14,6 +15,7 @@ export interface Story {
   author_id: string;
   mood: Mood;
   body: string;
+  card_style: CardStyleId;
   location: { type: 'Point'; coordinates: [number, number] };
   location_label: string | null;
   pin_mode: PinMode;
@@ -33,6 +35,7 @@ export interface User {
   email: string | null;
   display_handle: string | null;
   theme_preference: string;
+  preferred_card_style: CardStyleId;
   banned_at: string | null;
   created_at: string;
 }
