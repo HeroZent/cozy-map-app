@@ -36,7 +36,7 @@ test('maps rows to MyStory shape', async () => {
   await waitFor(() => expect(result.current.loading).toBe(false));
 
   expect(result.current.stories).toHaveLength(1);
-  const s = result.current.stories[0];
+  const s = result.current.stories[0]!;
   expect(s.id).toBe('story-1');
   expect(s.body).toBe('hello from Manila');
   expect(s.reaction_count).toBe(2);  // reactions.length
