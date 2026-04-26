@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
+import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 
 export interface SettingsSheetProps {
   onClose: () => void;
@@ -10,14 +12,15 @@ export interface SettingsSheetProps {
 
 export function SettingsSheet({ onClose, heatmapOn, onHeatmapToggle, bottomOffset = 0 }: SettingsSheetProps) {
   const theme = useTheme();
+  const sheetRef = useRef<AnimatedSheetRef>(null);
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
+    <AnimatedSheet ref={sheetRef} style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}>
           Settings
         </Text>
-        <Pressable onPress={onClose} style={styles.closeHitbox}>
+        <Pressable onPress={() => sheetRef.current?.close(onClose)} style={styles.closeHitbox}>
           <Text style={[styles.closeTxt, { color: theme.textMuted }]}>✕</Text>
         </Pressable>
       </View>
@@ -36,7 +39,7 @@ export function SettingsSheet({ onClose, heatmapOn, onHeatmapToggle, bottomOffse
       <Text style={[styles.credit, { color: 'rgba(245,230,200,0.3)' }]}>
         Made with warmth 🕯️
       </Text>
-    </View>
+    </AnimatedSheet>
   );
 }
 
@@ -73,7 +76,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     position: 'absolute',
     right: 12,
-    shadowColor: '#000',
+    shadowColor: '#1a0e00',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,

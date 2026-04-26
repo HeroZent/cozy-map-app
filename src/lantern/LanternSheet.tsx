@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
 } from 'react-native';
@@ -6,6 +6,7 @@ import { useTheme } from '@/theme/ThemeContext';
 import { supabase } from '@/data/supabase';
 import { getMoodById } from '@/moods/catalog';
 import type { Story } from '@/data/types';
+import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 
 const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, created_at, lat, lng';
 
@@ -17,6 +18,7 @@ export interface LanternSheetProps {
 
 export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: LanternSheetProps) {
   const theme = useTheme();
+  const sheetRef = useRef<AnimatedSheetRef>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,13 +53,13 @@ export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: Lante
   }, []);
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
+    <AnimatedSheet ref={sheetRef} style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}>
           🪔  Your lantern
         </Text>
-        <Pressable onPress={onClose} style={styles.closeHitbox}>
+        <Pressable onPress={() => sheetRef.current?.close(onClose)} style={styles.closeHitbox}>
           <Text style={[styles.closeTxt, { color: theme.textMuted }]}>✕</Text>
         </Pressable>
       </View>
@@ -84,7 +86,7 @@ export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: Lante
           ))}
         </ScrollView>
       )}
-    </View>
+    </AnimatedSheet>
   );
 }
 
@@ -126,7 +128,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     position: 'absolute',
     right: 12,
-    shadowColor: '#000',
+    shadowColor: '#1a0e00',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,

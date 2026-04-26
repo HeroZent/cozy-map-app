@@ -1,5 +1,5 @@
 // src/profile/ProfileModal.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -17,6 +17,7 @@ import { MySulatRow } from './MySulatRow';
 import { supabase } from '@/data/supabase';
 import { StylePicker } from '@/story/StylePicker';
 import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
+import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 
 export interface ProfileModalProps {
   onClose: () => void;
@@ -27,6 +28,7 @@ export interface ProfileModalProps {
 
 export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileModalProps) {
   const theme = useTheme();
+  const sheetRef = useRef<AnimatedSheetRef>(null);
   const { user, loading: userLoading, error: userError } = useUser();
   const { stories, loading: storiesLoading, error: storiesError } = useMyStories();
   const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
@@ -69,13 +71,13 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
+    <AnimatedSheet ref={sheetRef} style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}>
           your sulat
         </Text>
-        <Pressable onPress={onClose} style={styles.closeHitbox}>
+        <Pressable onPress={() => sheetRef.current?.close(onClose)} style={styles.closeHitbox}>
           <Text style={[styles.closeTxt, { color: theme.textMuted }]}>✕</Text>
         </Pressable>
       </View>
@@ -138,7 +140,7 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
           )}
         </>
       )}
-    </View>
+    </AnimatedSheet>
   );
 }
 
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     position: 'absolute',
     right: 12,
-    shadowColor: '#000',
+    shadowColor: '#1a0e00',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
