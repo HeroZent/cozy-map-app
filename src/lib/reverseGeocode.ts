@@ -18,8 +18,8 @@ export async function reverseGeocode(lat: number, lng: number): Promise<PlaceLab
 
     const a = data.address;
     const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county ?? '';
-    const country = a.country ?? '';
-    const short = [city, country].filter(Boolean).join(', ');
+    const region = a.state ?? a.region ?? a.state_district ?? a.country ?? '';
+    const short = [city, region].filter(Boolean).join(', ');
 
     return { short: short || data.display_name, full: data.display_name };
   } catch {
