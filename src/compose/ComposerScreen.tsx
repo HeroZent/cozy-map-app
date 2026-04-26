@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, View, ActivityIndicator } from 'react-native';
+import { Alert, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MoodPicker } from './MoodPicker';
 import { TextEditor } from './TextEditor';
@@ -32,7 +32,7 @@ export function ComposerScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.fill}>
       {step.kind === 'mood' && (
         <MoodPicker onPick={(mood) => setStep({ kind: 'text', mood })} />
       )}
@@ -43,10 +43,15 @@ export function ComposerScreen() {
         <LocationPicker onPick={(loc) => submit(step.mood, step.body, loc)} />
       )}
       {step.kind === 'submitting' && (
-        <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
+        <View style={styles.loadingBox}>
           <ActivityIndicator color={theme.accent} size="large" />
         </View>
       )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+  loadingBox: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+});

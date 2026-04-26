@@ -44,7 +44,7 @@ export class JourneyTracker {
       if (row) {
         row.dataset.done = 'true';
         row.textContent = `✓ ${row.textContent?.replace(/^[☐✓]\s+/, '')}`;
-        (row.style as any).color = '#a8d8a8';
+        row.style.color = '#a8d8a8';
       }
     }, stepId);
   }

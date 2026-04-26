@@ -33,13 +33,16 @@ export function TextEditor({ mood, onContinue }: TextEditorProps) {
         multiline
         style={[styles.input, { color: theme.textPrimary, borderColor: theme.surface }]}
       />
+      {/* eslint-disable-next-line react-native/no-inline-styles */}
       <Text style={[styles.counter, { color: tooLong ? '#ff8a8a' : theme.textMuted }]}>
         {text.length} / {MAX}{tooLong ? ' — Too long' : ''}
       </Text>
       <Pressable
         onPress={() => canContinue && onContinue(text.trim())}
+        // eslint-disable-next-line react-native/no-inline-styles
         style={[styles.btn, { backgroundColor: canContinue ? theme.accent : theme.surface }]}
       >
+        {/* eslint-disable-next-line react-native/no-inline-styles */}
         <Text style={[styles.btnTxt, { color: canContinue ? '#2a1f0a' : theme.textMuted }]}>Continue →</Text>
       </Pressable>
     </View>

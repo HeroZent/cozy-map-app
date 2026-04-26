@@ -15,6 +15,19 @@ export interface UseStoriesResult {
   error: Error | null;
 }
 
+type StoryRow = Omit<Story, 'location'> & { location?: { type: 'Point'; coordinates: [number, number] } };
+
+function inBbox(s: StoryRow, bbox: Bbox): boolean {
+  const coords = s.location?.coordinates;
+  const lng = coords?.[0];
+  const lat = coords?.[1];
+  return (
+    typeof lng === 'number' && typeof lat === 'number' &&
+    lng >= bbox.minLng && lng <= bbox.maxLng &&
+    lat >= bbox.minLat && lat <= bbox.maxLat
+  );
+}
+
 export function useStories(bbox: Bbox): UseStoriesResult {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,19 +47,11 @@ export function useStories(bbox: Bbox): UseStoriesResult {
           .limit(500);
         if (e) throw e;
 
-        const inBbox = (data ?? []).filter((s: any) => {
-          const coords = s.location?.coordinates as [number, number] | undefined;
-          const lng = coords?.[0];
-          const lat = coords?.[1];
-          return (
-            typeof lng === 'number' && typeof lat === 'number' &&
-            lng >= bbox.minLng && lng <= bbox.maxLng &&
-            lat >= bbox.minLat && lat <= bbox.maxLat
-          );
-        }) as Story[];
+        const rows = (data ?? []) as StoryRow[];
+        const filtered = rows.filter((s) => inBbox(s, bbox)) as Story[];
 
         if (!cancelled) {
-          setStories(inBbox);
+          setStories(filtered);
           setLoading(false);
         }
       } catch (e) {
@@ -63,22 +68,16 @@ export function useStories(bbox: Bbox): UseStoriesResult {
       .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'stories', filter: 'status=eq.live' },
           (payload) => {
-            const s = payload.new as any;
+            const inserted = payload.new as { id: string };
             (async () => {
               const { data } = await supabase
                 .from('stories')
                 .select('id, author_id, mood, body, location_label, pin_mode, language, status, is_memory, created_at, location:location::json')
-                .eq('id', s.id)
+                .eq('id', inserted.id)
                 .single();
               if (data) {
-                const coords = (data as any).location?.coordinates as [number, number] | undefined;
-                const lng = coords?.[0];
-                const lat = coords?.[1];
-                if (
-                  typeof lng === 'number' && typeof lat === 'number' &&
-                  lng >= bbox.minLng && lng <= bbox.maxLng &&
-                  lat >= bbox.minLat && lat <= bbox.maxLat
-                ) {
+                const row = data as StoryRow;
+                if (inBbox(row, bbox)) {
                   setStories((prev) => [data as Story, ...prev]);
                 }
               }

@@ -18,21 +18,21 @@ export default function Home() {
   const theme = useTheme();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.fill}>
       <HeatmapToggle enabled={heatmapOn} onToggle={() => setHeatmapOn((v) => !v)} />
       <MapView>
         {heatmapOn && <HeatmapLayer stories={stories} />}
         <StoryPins stories={stories} zoom={viewport.zoom} bbox={bbox} />
       </MapView>
-      <Pressable onPress={() => router.push('/compose')} style={[fab.btn, { backgroundColor: theme.accent }]}>
-        <Text style={fab.plus}>+</Text>
+      <Pressable onPress={() => router.push('/compose')} style={[styles.fabBtn, { backgroundColor: theme.accent }]}>
+        <Text style={styles.fabPlus}>+</Text>
       </Pressable>
     </View>
   );
 }
 
-const fab = StyleSheet.create({
-  btn: {
+const styles = StyleSheet.create({
+  fabBtn: {
     alignItems: 'center',
     alignSelf: 'center',
     borderRadius: 32,
@@ -47,5 +47,6 @@ const fab = StyleSheet.create({
     shadowRadius: 14,
     width: 64,
   },
-  plus: { color: '#2a1f0a', fontSize: 32, fontWeight: '300' },
+  fabPlus: { color: '#2a1f0a', fontSize: 32, fontWeight: '300' },
+  fill: { flex: 1 },
 });

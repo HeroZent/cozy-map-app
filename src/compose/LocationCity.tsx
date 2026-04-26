@@ -46,9 +46,9 @@ export function LocationCity({ onPick }: LocationCityProps) {
         placeholderTextColor={theme.textMuted}
         style={[styles.input, { borderColor: theme.surface, color: theme.textPrimary }]}
       />
-      {loading && <ActivityIndicator color={theme.accent} style={{ marginTop: 12 }} />}
+      {loading && <ActivityIndicator color={theme.accent} style={styles.loader} />}
       <View style={styles.results}>
-        {results.map((r, i) => (
+        {results.map((r) => (
           <Pressable
             key={`${r.lat}-${r.lng}`}
             onPress={() => onPick({ lat: r.lat, lng: r.lng }, r.label)}
@@ -64,8 +64,9 @@ export function LocationCity({ onPick }: LocationCityProps) {
 
 const styles = StyleSheet.create({
   input: { borderRadius: 12, borderWidth: 1, fontSize: 15, padding: 12 },
+  loader: { marginTop: 12 },
   result: { borderRadius: 12, padding: 14 },
-  results: { gap: 8, marginTop: 12 },
   resultTxt: { fontSize: 14 },
+  results: { gap: 8, marginTop: 12 },
   wrap: { padding: 16 },
 });

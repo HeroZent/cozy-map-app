@@ -33,6 +33,7 @@ export function LocationPicker({ onPick }: LocationPickerProps) {
           <Pressable
             key={t}
             onPress={() => setTab(t)}
+            // eslint-disable-next-line react-native/no-inline-styles
             style={[styles.tab, { borderColor: tab === t ? theme.accent : 'transparent' }]}
           >
             <Text style={[styles.tabTxt, { color: theme.textPrimary }]}>

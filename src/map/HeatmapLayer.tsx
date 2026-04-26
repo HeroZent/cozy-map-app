@@ -28,6 +28,7 @@ export function HeatmapLayer({ stories }: HeatmapLayerProps) {
         paint={{
           'heatmap-weight': 1,
           'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 9, 3],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           'heatmap-color': heatmapGradient as any,
           'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 20, 9, 50],
           'heatmap-opacity': 0.7,

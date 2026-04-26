@@ -18,6 +18,7 @@ export function MapView({ children }: MapViewProps) {
     <Map
       initialViewState={viewport}
       mapStyle={theme.mapStyle}
+      // eslint-disable-next-line react-native/no-inline-styles
       style={{ width: '100%', height: '100%' }}
       onMoveEnd={(e: ViewStateChangeEvent) =>
         setViewport({

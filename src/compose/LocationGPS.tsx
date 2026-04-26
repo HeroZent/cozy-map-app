@@ -36,8 +36,9 @@ export function LocationGPS({ onPick }: LocationGPSProps) {
           <Text style={styles.btnTxt}>Use my current location</Text>
         </Pressable>
       )}
+      {/* eslint-disable-next-line react-native/no-inline-styles */}
       {status === 'asking' && <Text style={{ color: theme.textMuted }}>Asking permission…</Text>}
-      {status === 'denied' && <Text style={{ color: '#ff8a8a' }}>Permission denied. Try another option.</Text>}
+      {status === 'denied' && <Text style={styles.errorTxt}>Permission denied. Try another option.</Text>}
       {status === 'got' && coords && (
         <>
           <Text style={[styles.coords, { color: theme.textPrimary }]}>
@@ -56,5 +57,6 @@ const styles = StyleSheet.create({
   btn: { borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12 },
   btnTxt: { color: '#2a1f0a', fontWeight: '600' },
   coords: { fontFamily: 'monospace', fontSize: 14 },
+  errorTxt: { color: '#ff8a8a' },
   wrap: { alignItems: 'center', gap: 16, padding: 24 },
 });

@@ -19,6 +19,7 @@ export function LocationDropPin({ onPick }: LocationDropPinProps) {
         <Map
           initialViewState={{ longitude: center.lng, latitude: center.lat, zoom: 6 }}
           mapStyle={theme.mapStyle}
+          // eslint-disable-next-line react-native/no-inline-styles
           style={{ height: '100%', width: '100%' }}
           onMove={(e) => setCenter({ lat: e.viewState.latitude, lng: e.viewState.longitude })}
         >

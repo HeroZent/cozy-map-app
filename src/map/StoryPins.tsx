@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -12,6 +13,20 @@ export interface StoryPinsProps {
   bbox: [number, number, number, number];
 }
 
+interface ClusterProps {
+  cluster: true;
+  cluster_id: number;
+  point_count: number;
+  point_count_abbreviated: string | number;
+}
+
+interface PointProps {
+  cluster?: false;
+  story: Story;
+}
+
+type FeatureProps = ClusterProps | PointProps;
+
 export function StoryPins({ stories, zoom, bbox }: StoryPinsProps) {
   const router = useRouter();
   const { current: map } = useMap();
@@ -21,13 +36,13 @@ export function StoryPins({ stories, zoom, bbox }: StoryPinsProps) {
     <>
       {clusters.map((c) => {
         const [lng, lat] = c.geometry.coordinates as [number, number];
-        if ((c.properties as any).cluster) {
-          const count = (c.properties as any).point_count as number;
+        const props = c.properties as FeatureProps;
+        if (props.cluster) {
           const id = c.id as number;
           return (
             <Marker key={`c-${id}`} longitude={lng} latitude={lat} anchor="center">
               <ClusterMarker
-                count={count}
+                count={props.point_count}
                 onPress={() => {
                   const expansion = supercluster.getClusterExpansionZoom(id);
                   map?.flyTo({ center: [lng, lat], zoom: expansion });
@@ -36,7 +51,7 @@ export function StoryPins({ stories, zoom, bbox }: StoryPinsProps) {
             </Marker>
           );
         }
-        const story = (c.properties as any).story as Story;
+        const story = props.story;
         return (
           <Marker key={story.id} longitude={lng} latitude={lat} anchor="center">
             <Pressable onPress={() => router.push(`/story/${story.id}`)}>
