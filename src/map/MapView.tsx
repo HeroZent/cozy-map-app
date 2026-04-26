@@ -4,6 +4,7 @@ import type { MapMouseEvent } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '@/theme/ThemeContext';
 import { useViewport } from './useViewport';
+import { FogLayer } from './FogLayer';
 import type { LatLng } from '@/lib/geo';
 
 export interface FlyTarget extends LatLng {
@@ -37,6 +38,7 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
       ref={mapRef}
       initialViewState={viewport}
       mapStyle={theme.mapStyle}
+      minZoom={5}
       // eslint-disable-next-line react-native/no-inline-styles
       style={{ width: '100%', height: '100%' }}
       doubleClickZoom={!onDoubleClick}
@@ -54,6 +56,7 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
         }
       }}
     >
+      <FogLayer />
       {children}
     </Map>
   );
