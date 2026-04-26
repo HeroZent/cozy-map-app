@@ -3,10 +3,10 @@ import { markSeen, getSeenCount, isUnread } from '@/profile/useUnreadReplies';
 
 const store: Record<string, string> = {};
 
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn((key: string) => Promise.resolve(store[key] ?? null)),
-  setItem: jest.fn((key: string, value: string) => {
-    store[key] = value;
+jest.mock('@/lib/persistence', () => ({
+  kvGet: jest.fn((k: string) => Promise.resolve(store[k] ?? null)),
+  kvSet: jest.fn((k: string, v: string) => {
+    store[k] = v;
     return Promise.resolve();
   }),
 }));

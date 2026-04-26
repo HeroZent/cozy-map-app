@@ -1,17 +1,17 @@
 // src/profile/useUnreadReplies.ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { kvGet, kvSet } from '@/lib/persistence';
 
-const key = (storyId: string) => `reply_seen_${storyId}`;
+const key = (storyId: string) => `sulat.reply_seen.${storyId}`;
 
 /** Store the reply count the user last saw for a story. */
 export async function markSeen(storyId: string, count: number): Promise<void> {
-  await AsyncStorage.setItem(key(storyId), String(count));
+  await kvSet(key(storyId), String(count));
 }
 
 /** Returns the last-seen reply count, or 0 if never seen. */
 export async function getSeenCount(storyId: string): Promise<number> {
-  const val = await AsyncStorage.getItem(key(storyId));
-  return val !== null ? parseInt(val, 10) : 0;
+  const val = await kvGet(key(storyId));
+  return val !== null && !Number.isNaN(parseInt(val, 10)) ? parseInt(val, 10) : 0;
 }
 
 /** Returns true when there are replies the user has not yet seen. */
