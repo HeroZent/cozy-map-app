@@ -1,5 +1,5 @@
 // src/story/StorySheet.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
@@ -24,6 +24,11 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
   const [flagged, setFlagged] = useState(false);
   const [threadOpen, setThreadOpen] = useState(false);
   const [replyCount, setReplyCount] = useState(story.reply_count);
+
+  useEffect(() => {
+    setThreadOpen(false);
+    setReplyCount(story.reply_count);
+  }, [story.id, story.reply_count]);
 
   const replyLabel =
     replyCount > 0 ? `💬 ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : '💬 Reply';
