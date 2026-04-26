@@ -1,24 +1,40 @@
-import { type ReactNode } from 'react';
-import Map, { type ViewStateChangeEvent } from 'react-map-gl/maplibre';
+import { useEffect, useRef, type ReactNode } from 'react';
+import Map, { type MapRef, type ViewStateChangeEvent } from 'react-map-gl/maplibre';
 import type { MapMouseEvent } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '@/theme/ThemeContext';
 import { useViewport } from './useViewport';
 import type { LatLng } from '@/lib/geo';
 
+export interface FlyTarget extends LatLng {
+  zoom?: number;
+}
+
 export interface MapViewProps {
   children?: ReactNode;
   onDoubleClick?: (loc: LatLng) => void;
+  flyTarget?: FlyTarget | null;
 }
 
-export function MapView({ children, onDoubleClick }: MapViewProps) {
+export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
   const theme = useTheme();
   const { viewport, setViewport, loaded } = useViewport();
+  const mapRef = useRef<MapRef>(null);
+
+  useEffect(() => {
+    if (!flyTarget || !mapRef.current) return;
+    mapRef.current.flyTo({
+      center: [flyTarget.lng, flyTarget.lat],
+      zoom: flyTarget.zoom ?? 13,
+      duration: 1800,
+    });
+  }, [flyTarget]);
 
   if (!loaded) return null;
 
   return (
     <Map
+      ref={mapRef}
       initialViewState={viewport}
       mapStyle={theme.mapStyle}
       // eslint-disable-next-line react-native/no-inline-styles

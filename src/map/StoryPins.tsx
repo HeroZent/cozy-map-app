@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import { Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
 import { PinMarker } from './PinMarker';
 import { ClusterMarker } from './ClusterMarker';
 import { useClusters } from './useClusters';
@@ -11,6 +10,7 @@ export interface StoryPinsProps {
   stories: Story[];
   zoom: number;
   bbox: [number, number, number, number];
+  onSelect: (story: Story) => void;
 }
 
 interface ClusterProps {
@@ -27,8 +27,7 @@ interface PointProps {
 
 type FeatureProps = ClusterProps | PointProps;
 
-export function StoryPins({ stories, zoom, bbox }: StoryPinsProps) {
-  const router = useRouter();
+export function StoryPins({ stories, zoom, bbox, onSelect }: StoryPinsProps) {
   const { current: map } = useMap();
   const { clusters, supercluster } = useClusters(stories, zoom, bbox);
 
@@ -54,8 +53,8 @@ export function StoryPins({ stories, zoom, bbox }: StoryPinsProps) {
         const story = props.story;
         return (
           <Marker key={story.id} longitude={lng} latitude={lat} anchor="center">
-            <Pressable onPress={() => router.push(`/story/${story.id}`)}>
-              <PinMarker mood={story.mood} isMemory={story.is_memory} />
+            <Pressable onPress={() => onSelect(story)}>
+              <PinMarker mood={story.mood} isMemory={story.is_memory} reactionCount={story.reaction_count} />
             </Pressable>
           </Marker>
         );

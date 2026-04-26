@@ -6,12 +6,14 @@ export type PinMode = 'gps' | 'dropped' | 'city';
 
 export type StoryStatus = 'live' | 'hidden' | 'flagged' | 'removed';
 
+import type { ReactionEmoji } from '@/reactions/catalog';
+export type { ReactionEmoji };
+
 export interface Story {
   id: string;
   author_id: string;
   mood: Mood;
   body: string;
-  // PostGIS Point comes back as GeoJSON-ish object via supabase
   location: { type: 'Point'; coordinates: [number, number] };
   location_label: string | null;
   pin_mode: PinMode;
@@ -19,6 +21,8 @@ export interface Story {
   status: StoryStatus;
   is_memory: boolean;
   created_at: string;
+  reaction_count: number;
+  my_reactions: ReactionEmoji[];
 }
 
 export interface User {

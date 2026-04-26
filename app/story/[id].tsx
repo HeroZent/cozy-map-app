@@ -17,14 +17,17 @@ export default function StoryRoute() {
     (async () => {
       const { data, error: e } = await supabase
         .from('stories')
-        .select('id, author_id, mood, body, location_label, pin_mode, language, status, is_memory, created_at, location:location::json')
+        .select('id, author_id, mood, body, location_label, pin_mode, language, status, is_memory, created_at, lat, lng')
         .eq('id', id)
         .single();
       if (e) {
         setError(e.message);
         return;
       }
-      setStory(data as Story);
+      if (data) {
+        const { lat, lng, ...rest } = data as typeof data & { lat: number; lng: number };
+        setStory({ ...rest, location: { type: 'Point', coordinates: [lng, lat] } } as Story);
+      }
     })();
   }, [id]);
 
