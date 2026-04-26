@@ -178,6 +178,8 @@ export default function Home() {
 const styles = StyleSheet.create({
   bottomBar: {
     alignItems: 'center',
+    borderTopColor: 'rgba(244,201,122,0.08)',
+    borderTopWidth: 1,
     bottom: 0,
     flexDirection: 'row',
     height: NAV_HEIGHT,
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#f4c97a',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.6,
     shadowRadius: 12,
     width: 60,
   },
