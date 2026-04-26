@@ -1,5 +1,5 @@
 // src/replies/useReplies.ts
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/data/supabase';
 
 export interface Reply {
@@ -30,7 +30,7 @@ export function useReplies(storyId: string): UseRepliesResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetch = async () => {
+  const fetch = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -41,6 +41,7 @@ export function useReplies(storyId: string): UseRepliesResult {
         .eq('status', 'live')
         .order('created_at', { ascending: true });
       if (e) throw e;
+      // data is typed by Supabase's generated schema; double cast needed for the join shape
       const rows = (data ?? []) as unknown as ReplyRow[];
       setReplies(
         rows.map((r) => ({
@@ -56,7 +57,7 @@ export function useReplies(storyId: string): UseRepliesResult {
     } finally {
       setLoading(false);
     }
-  };
+  }, [storyId]);
 
   return { replies, loading, error, fetch };
 }
