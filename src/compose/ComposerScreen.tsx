@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Alert, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MoodPicker } from './MoodPicker';
 import { TextEditor } from './TextEditor';
@@ -14,7 +14,11 @@ type Step =
   | { kind: 'location'; mood: Mood; body: string }
   | { kind: 'submitting' };
 
-export function ComposerScreen() {
+export interface ComposerScreenProps {
+  initialLocation?: PickedLocation;
+}
+
+export function ComposerScreen({ initialLocation }: ComposerScreenProps) {
   const [step, setStep] = useState<Step>({ kind: 'mood' });
   const router = useRouter();
   const create = useCreateStory();
@@ -31,13 +35,30 @@ export function ComposerScreen() {
     }
   };
 
+  const handleTextContinue = (mood: Mood, body: string) => {
+    if (initialLocation) {
+      submit(mood, body, initialLocation);
+    } else {
+      setStep({ kind: 'location', mood, body });
+    }
+  };
+
   return (
     <View style={styles.fill}>
       {step.kind === 'mood' && (
         <MoodPicker onPick={(mood) => setStep({ kind: 'text', mood })} />
       )}
       {step.kind === 'text' && (
-        <TextEditor mood={step.mood} onContinue={(body) => setStep({ kind: 'location', mood: step.mood, body })} />
+        <View style={styles.fill}>
+          {initialLocation && (
+            <View style={styles.locationBanner}>
+              <Text style={[styles.locationBannerText, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}>
+                Pinned to map
+              </Text>
+            </View>
+          )}
+          <TextEditor mood={step.mood} onContinue={(body) => handleTextContinue(step.mood, body)} />
+        </View>
       )}
       {step.kind === 'location' && (
         <LocationPicker onPick={(loc) => submit(step.mood, step.body, loc)} />
@@ -54,4 +75,13 @@ export function ComposerScreen() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   loadingBox: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+  locationBanner: {
+    alignItems: 'center',
+    paddingBottom: 4,
+    paddingTop: 12,
+  },
+  locationBannerText: {
+    fontSize: 13,
+    opacity: 0.7,
+  },
 });

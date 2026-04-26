@@ -20,7 +20,7 @@ export default function Home() {
   return (
     <View style={styles.fill}>
       <HeatmapToggle enabled={heatmapOn} onToggle={() => setHeatmapOn((v) => !v)} />
-      <MapView>
+      <MapView onDoubleClick={(loc) => router.push(`/compose?lat=${loc.lat}&lng=${loc.lng}&mode=dropped`)}>
         {heatmapOn && <HeatmapLayer stories={stories} />}
         <StoryPins stories={stories} zoom={viewport.zoom} bbox={bbox} />
       </MapView>

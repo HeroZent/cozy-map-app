@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { LocationGPS } from './LocationGPS';
-import { LocationDropPin } from './LocationDropPin';
 import { LocationCity } from './LocationCity';
 import type { LatLng } from '@/lib/geo';
 import type { PinMode } from '@/data/types';
@@ -17,7 +16,7 @@ export interface LocationPickerProps {
   onPick: (loc: PickedLocation) => void;
 }
 
-type Tab = 'gps' | 'drop' | 'city';
+type Tab = 'gps' | 'city';
 
 export function LocationPicker({ onPick }: LocationPickerProps) {
   const theme = useTheme();
@@ -29,7 +28,7 @@ export function LocationPicker({ onPick }: LocationPickerProps) {
         Where does this story live?
       </Text>
       <View style={styles.tabs}>
-        {(['gps', 'drop', 'city'] as const).map((t) => (
+        {(['gps', 'city'] as const).map((t) => (
           <Pressable
             key={t}
             onPress={() => setTab(t)}
@@ -37,13 +36,12 @@ export function LocationPicker({ onPick }: LocationPickerProps) {
             style={[styles.tab, { borderColor: tab === t ? theme.accent : 'transparent' }]}
           >
             <Text style={[styles.tabTxt, { color: theme.textPrimary }]}>
-              {t === 'gps' ? '📍 My location' : t === 'drop' ? '🗺️ Drop a pin' : '🏙️ Pick a city'}
+              {t === 'gps' ? '📍 My location' : '🏙️ Pick a city'}
             </Text>
           </Pressable>
         ))}
       </View>
       {tab === 'gps' && <LocationGPS onPick={(c) => onPick({ coords: c, pinMode: 'gps' })} />}
-      {tab === 'drop' && <LocationDropPin onPick={(c) => onPick({ coords: c, pinMode: 'dropped' })} />}
       {tab === 'city' && <LocationCity onPick={(c, label) => onPick({ coords: c, pinMode: 'city', label })} />}
     </View>
   );
