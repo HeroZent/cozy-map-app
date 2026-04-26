@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import Map, { type MapRef, type ViewStateChangeEvent } from 'react-map-gl/maplibre';
-import type { MapMouseEvent } from 'react-map-gl/maplibre';
+import type { MapMouseEvent, MapLayerTouchEvent } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '@/theme/ThemeContext';
 import { useViewport } from './useViewport';
@@ -20,6 +20,7 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
   const theme = useTheme();
   const { viewport, setViewport, loaded } = useViewport();
   const mapRef = useRef<MapRef>(null);
+  const lastTapRef = useRef<number>(0);
 
   useEffect(() => {
     if (!flyTarget || !mapRef.current) return;
@@ -53,6 +54,19 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
         if (onDoubleClick) {
           e.preventDefault();
           onDoubleClick({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+        }
+      }}
+      onTouchEnd={(e: MapLayerTouchEvent) => {
+        if (!onDoubleClick) return;
+        // Only handle single-finger taps
+        if (e.points.length !== 1) return;
+        const now = Date.now();
+        if (now - lastTapRef.current < 300) {
+          e.preventDefault();
+          onDoubleClick({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+          lastTapRef.current = 0;
+        } else {
+          lastTapRef.current = now;
         }
       }}
     >
