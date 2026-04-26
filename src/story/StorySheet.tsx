@@ -1,5 +1,5 @@
 // src/story/StorySheet.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
@@ -7,6 +7,7 @@ import { ReactionBar } from '@/reactions/ReactionBar';
 import { FlagSheet } from '@/reactions/FlagSheet';
 import { ReplyThread } from '@/replies/ReplyThread';
 import { markSeen } from '@/profile/useUnreadReplies';
+import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import { StoryCard } from './StoryCard';
 import type { Story } from '@/data/types';
 
@@ -19,6 +20,7 @@ export interface StorySheetProps {
 
 export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: StorySheetProps) {
   const theme = useTheme();
+  const sheetRef = useRef<AnimatedSheetRef>(null);
   const mood = getMoodById(story.mood);
   const ageDays = Math.floor((Date.now() - new Date(story.created_at).getTime()) / 86400000);
   const timeLabel = ageDays === 0 ? 'today' : ageDays === 1 ? '1d ago' : `${ageDays}d ago`;
@@ -42,7 +44,10 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
     replyCount > 0 ? `💬 ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : '💬 Reply';
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
+    <AnimatedSheet
+      ref={sheetRef}
+      style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}
+    >
       {/* Location header */}
       <View style={styles.locationRow}>
         <Text style={[styles.locationPin, { color: theme.accent }]}>📍</Text>
@@ -55,7 +60,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
         >
           <Text style={[styles.flagTxt, { color: (flagOpen || flagged) ? theme.accent : theme.textMuted }]}>⚑</Text>
         </Pressable>
-        <Pressable onPress={onClose} style={styles.closeHitbox}>
+        <Pressable onPress={() => sheetRef.current?.close(onClose)} style={styles.closeHitbox}>
           <Text style={[styles.closeTxt, { color: theme.textMuted }]}>✕</Text>
         </Pressable>
       </View>
@@ -99,7 +104,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
           </View>
         </>
       )}
-    </View>
+    </AnimatedSheet>
   );
 }
 

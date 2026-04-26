@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, Pressable,
   StyleSheet, ActivityIndicator,
@@ -8,6 +8,7 @@ import { useTheme } from '@/theme/ThemeContext';
 import { MOODS } from '@/moods/catalog';
 import { useCreateStory } from '@/data/useCreateStory';
 import { reverseGeocode } from '@/lib/reverseGeocode';
+import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import type { Mood } from '@/data/types';
 import { useUser } from '@/data/useUser';
 import { StylePicker } from '@/story/StylePicker';
@@ -24,6 +25,7 @@ export interface ComposeSheetProps {
 
 export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: ComposeSheetProps) {
   const theme = useTheme();
+  const sheetRef = useRef<AnimatedSheetRef>(null);
   const create = useCreateStory();
 
   const [selectedMood, setSelectedMood] = useState<Mood>('on_my_mind');
@@ -87,13 +89,16 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
+    <AnimatedSheet
+      ref={sheetRef}
+      style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}>
           New sulat
         </Text>
-        <Pressable onPress={onClose} style={styles.closeHitbox}>
+        <Pressable onPress={() => sheetRef.current?.close(onClose)} style={styles.closeHitbox}>
           <Text style={[styles.closeTxt, { color: theme.textMuted }]}>✕</Text>
         </Pressable>
       </View>
@@ -164,7 +169,7 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
           ? <ActivityIndicator color="#2a1f0a" />
           : <Text style={styles.postBtnTxt}>Post sulat</Text>}
       </Pressable>
-    </View>
+    </AnimatedSheet>
   );
 }
 
