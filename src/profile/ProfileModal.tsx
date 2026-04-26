@@ -14,6 +14,9 @@ import { useMyStories } from './useMyStories';
 import { getSeenCount, isUnread as checkUnread } from './useUnreadReplies';
 import { HandleClaim } from './HandleClaim';
 import { MySulatRow } from './MySulatRow';
+import { supabase } from '@/data/supabase';
+import { StylePicker } from '@/story/StylePicker';
+import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
 
 export interface ProfileModalProps {
   onClose: () => void;
@@ -28,6 +31,8 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
   const { stories, loading: storiesLoading, error: storiesError } = useMyStories();
   const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
   const [seenCounts, setSeenCounts] = useState<Record<string, number>>({});
+  const [preferredStyle, setPreferredStyle] = useState<CardStyleId>(DEFAULT_CARD_STYLE);
+  const [saved, setSaved] = useState(false);
 
   // Resolved handle: prefer the just-claimed one over the DB value.
   const displayHandle = claimedHandle ?? user?.display_handle ?? null;
@@ -43,6 +48,20 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
       setSeenCounts(counts);
     })();
   }, [stories]);
+
+  useEffect(() => {
+    if (user?.preferred_card_style) {
+      setPreferredStyle(user.preferred_card_style);
+    }
+  }, [user?.preferred_card_style]);
+
+  const handleStyleChange = async (id: CardStyleId) => {
+    if (!user) return;
+    setPreferredStyle(id);
+    await supabase.from('users').update({ preferred_card_style: id }).eq('id', user.id);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
@@ -64,12 +83,21 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
         <>
           {/* Handle section */}
           {displayHandle !== null ? (
-            <View style={styles.handleRow}>
-              <Text style={[styles.handleTxt, { color: theme.accent }]}>
-                @{displayHandle}
-              </Text>
-              <Text style={[styles.lockIcon, { color: theme.textMuted }]}>{'  🔒'}</Text>
-            </View>
+            <>
+              <View style={styles.handleRow}>
+                <Text style={[styles.handleTxt, { color: theme.accent }]}>
+                  @{displayHandle}
+                </Text>
+                <Text style={[styles.lockIcon, { color: theme.textMuted }]}>{'  🔒'}</Text>
+              </View>
+              <View style={styles.styleSection}>
+                <Text style={[styles.styleSectionLabel, { color: theme.textMuted }]}>your paper</Text>
+                <StylePicker selected={preferredStyle} onSelect={handleStyleChange} showLabel />
+                {saved && (
+                  <Text style={[styles.savedTxt, { color: theme.accent }]}>Saved ✓</Text>
+                )}
+              </View>
+            </>
           ) : user !== null ? (
             <HandleClaim
               userId={user.id}
@@ -137,4 +165,7 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
   lockIcon: { fontSize: 13 },
   title: { fontSize: 17, fontWeight: '500' },
+  savedTxt: { fontSize: 11, textAlign: 'center', marginTop: 2 },
+  styleSectionLabel: { fontSize: 11, fontWeight: '500', marginBottom: 6 },
+  styleSection: { marginBottom: 4, marginTop: 8 },
 });
