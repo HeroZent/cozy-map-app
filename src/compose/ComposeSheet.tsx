@@ -9,6 +9,9 @@ import { MOODS } from '@/moods/catalog';
 import { useCreateStory } from '@/data/useCreateStory';
 import { reverseGeocode } from '@/lib/reverseGeocode';
 import type { Mood } from '@/data/types';
+import { useUser } from '@/data/useUser';
+import { StylePicker } from '@/story/StylePicker';
+import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
 
 export interface ComposeSheetProps {
   /** Pre-filled from double-click. Undefined = use GPS. */
@@ -28,6 +31,15 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
   const [placeLabel, setPlaceLabel] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { user } = useUser();
+  const [selectedStyle, setSelectedStyle] = useState<CardStyleId>(DEFAULT_CARD_STYLE);
+
+  useEffect(() => {
+    if (user?.preferred_card_style) {
+      setSelectedStyle(user.preferred_card_style);
+    }
+  }, [user?.preferred_card_style]);
 
   // Reverse geocode whenever location resolves
   useEffect(() => {
@@ -63,6 +75,7 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
         coords: location,
         pinMode: coords ? 'dropped' : 'gps',
         label: placeLabel ?? undefined,
+        cardStyle: selectedStyle,
       });
       onClose();
       onPosted?.();
@@ -110,6 +123,8 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
           );
         })}
       </ScrollView>
+
+      <StylePicker selected={selectedStyle} onSelect={setSelectedStyle} />
 
       {/* Text area */}
       <TextInput

@@ -7,6 +7,7 @@ import { LocationPicker, type PickedLocation } from './LocationPicker';
 import { useCreateStory } from '@/data/useCreateStory';
 import { useTheme } from '@/theme/ThemeContext';
 import type { Mood } from '@/data/types';
+import { DEFAULT_CARD_STYLE } from '@/story/cardStyles';
 
 type Step =
   | { kind: 'mood' }
@@ -27,7 +28,7 @@ export function ComposerScreen({ initialLocation }: ComposerScreenProps) {
   const submit = async (mood: Mood, body: string, loc: PickedLocation) => {
     setStep({ kind: 'submitting' });
     try {
-      await create({ mood, body, ...loc });
+      await create({ mood, body, cardStyle: DEFAULT_CARD_STYLE, ...loc });
       router.replace('/');
     } catch (e) {
       Alert.alert('Could not post', (e as Error).message);
