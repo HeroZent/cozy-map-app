@@ -80,15 +80,15 @@ export default function Home() {
         <View style={styles.headerRight} pointerEvents="box-none">
           <Pressable
             onPress={() => setProfileOpen(true)}
-            style={[styles.profileBtn, { backgroundColor: theme.surface }]}
+            style={[styles.profileBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
           >
-            <Text style={styles.profileIcon}>◉</Text>
+            <Text style={[styles.profileIcon, { color: theme.accent }]}>◉</Text>
           </Pressable>
           <Pressable
             onPress={() => setSettingsOpen(true)}
-            style={[styles.settingsBtn, { backgroundColor: theme.surface }]}
+            style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
           >
-            <Text style={styles.settingsIcon}>⚙</Text>
+            <Text style={[styles.settingsIcon, { color: theme.accent }]}>⚙</Text>
           </Pressable>
         </View>
       </View>
@@ -209,19 +209,19 @@ const styles = StyleSheet.create({
   profileBtn: {
     alignItems: 'center',
     borderRadius: 20,
+    borderWidth: 1,
     height: 36,
     justifyContent: 'center',
-    opacity: 0.85,
     width: 36,
   },
-  profileIcon: { fontSize: 15 },
+  profileIcon: { fontSize: 16 },
   settingsBtn: {
     alignItems: 'center',
     borderRadius: 20,
+    borderWidth: 1,
     height: 36,
     justifyContent: 'center',
-    opacity: 0.85,
     width: 36,
   },
-  settingsIcon: { fontSize: 15 },
+  settingsIcon: { fontSize: 16 },
 });
