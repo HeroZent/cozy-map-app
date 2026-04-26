@@ -1,33 +1,41 @@
-# Superpowers brainstorming artifacts (visual companion server, mockups)
-.superpowers/
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# Node / Expo
+# dependencies
 node_modules/
+
+# Expo
 .expo/
 dist/
 web-build/
+expo-env.d.ts
 
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Native build artifacts (Phase 1+)
-android/app/build/
-android/build/
-android/.gradle/
-ios/Pods/
-ios/build/
-*.keystore
+# Native
+.kotlin/
+*.orig.*
 *.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
 
-# OS / editor
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
+*.pem
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
