@@ -59,3 +59,26 @@ test('getCardStyle(b) has pillFooter true', () => {
 test('getCardStyle(c) has sealFooter true', () => {
   expect(getCardStyle('c').sealFooter).toBe(true);
 });
+
+test('each style has showPostmark boolean', () => {
+  for (const style of CARD_STYLES) {
+    expect(typeof style.showPostmark).toBe('boolean');
+  }
+});
+
+test('showPostmark is true for styles a, c, e', () => {
+  expect(getCardStyle('a').showPostmark).toBe(true);
+  expect(getCardStyle('c').showPostmark).toBe(true);
+  expect(getCardStyle('e').showPostmark).toBe(true);
+});
+
+test('showPostmark is false for styles b, d', () => {
+  expect(getCardStyle('b').showPostmark).toBe(false);
+  expect(getCardStyle('d').showPostmark).toBe(false);
+});
+
+test('style a fontSize is 18 and lineHeight is 34', () => {
+  const def = getCardStyle('a');
+  expect(def.fontSize).toBe(18);
+  expect(def.lineHeight).toBe(34);
+});
