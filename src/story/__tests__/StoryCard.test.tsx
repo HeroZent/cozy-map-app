@@ -59,3 +59,39 @@ test('falls back to style a for unknown cardStyle', () => {
   const { getByText } = render(<StoryCard body="fallback" cardStyle="z" />);
   expect(getByText('fallback')).toBeTruthy();
 });
+
+test('shows postmark for style a when locationLabel and createdAt provided', () => {
+  const { getByText } = render(
+    <StoryCard
+      body="hello"
+      cardStyle="a"
+      locationLabel="Valenzuela, Metro Manila"
+      createdAt="2026-04-27T00:00:00.000Z"
+    />,
+  );
+  expect(getByText(/VALENZUELA/)).toBeTruthy();
+});
+
+test('does not show postmark for style b even with locationLabel', () => {
+  const { queryByText } = render(
+    <StoryCard
+      body="hello"
+      cardStyle="b"
+      locationLabel="Valenzuela, Metro Manila"
+      createdAt="2026-04-27T00:00:00.000Z"
+    />,
+  );
+  expect(queryByText(/VALENZUELA/)).toBeNull();
+});
+
+test('does not show postmark when locationLabel is null', () => {
+  const { queryByText } = render(
+    <StoryCard
+      body="hello"
+      cardStyle="a"
+      locationLabel={null}
+      createdAt="2026-04-27T00:00:00.000Z"
+    />,
+  );
+  expect(queryByText(/APR/)).toBeNull();
+});
