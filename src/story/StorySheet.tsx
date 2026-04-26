@@ -6,6 +6,7 @@ import { getMoodById } from '@/moods/catalog';
 import { ReactionBar } from '@/reactions/ReactionBar';
 import { FlagSheet } from '@/reactions/FlagSheet';
 import { ReplyThread } from '@/replies/ReplyThread';
+import { markSeen } from '@/profile/useUnreadReplies';
 import type { Story } from '@/data/types';
 
 export interface StorySheetProps {
@@ -29,6 +30,12 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
     setThreadOpen(false);
     setReplyCount(story.reply_count);
   }, [story.id, story.reply_count]);
+
+  useEffect(() => {
+    if (threadOpen) {
+      markSeen(story.id, replyCount);
+    }
+  }, [threadOpen, story.id, replyCount]);
 
   const replyLabel =
     replyCount > 0 ? `💬 ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : '💬 Reply';
