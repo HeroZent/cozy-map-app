@@ -15,6 +15,7 @@ interface CreateStoryBody {
   pin_mode: 'gps' | 'dropped' | 'city';
   location_label?: string | null;
   language?: string | null;
+  card_style?: string | null;
 }
 
 const VALID_MOODS = new Set([
@@ -22,6 +23,7 @@ const VALID_MOODS = new Set([
   'memory', 'dream', 'unsent_letter', 'forgiveness',
 ]);
 const VALID_PIN_MODES = new Set(['gps', 'dropped', 'city']);
+const VALID_CARD_STYLE_RE = /^[a-z0-9_]{1,32}$/;
 
 const GRID = 0.0045;
 function round500m(n: number) { return Math.round(n / GRID) * GRID; }
@@ -49,6 +51,11 @@ serve(async (req) => {
     return new Response('Invalid coordinates', { status: 400, headers: cors });
   }
 
+  const cardStyle =
+    typeof payload.card_style === 'string' && VALID_CARD_STYLE_RE.test(payload.card_style)
+      ? payload.card_style
+      : 'a';
+
   const supa = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -69,6 +76,7 @@ serve(async (req) => {
     location_label: payload.location_label ?? null,
     pin_mode: payload.pin_mode,
     language: payload.language ?? 'en',
+    card_style: cardStyle,
     status: 'live',
   }).select('id').single();
 
