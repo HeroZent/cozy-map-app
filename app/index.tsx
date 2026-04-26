@@ -40,8 +40,16 @@ export default function Home() {
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
 
-  const openCompose = (coords?: { lat: number; lng: number }) => {
+  const closeAllSheets = () => {
     setSelectedStory(null);
+    setComposeOpen(false);
+    setLanternOpen(false);
+    setSettingsOpen(false);
+    setProfileOpen(false);
+  };
+
+  const openCompose = (coords?: { lat: number; lng: number }) => {
+    closeAllSheets();
     setComposeCoords(coords);
     setComposeOpen(true);
   };
@@ -67,7 +75,7 @@ export default function Home() {
           stories={stories}
           zoom={viewport.zoom}
           bbox={bbox}
-          onSelect={(story) => setSelectedStory(story)}
+          onSelect={(story) => { closeAllSheets(); setSelectedStory(story); }}
         />
       </MapView>
 
@@ -79,13 +87,13 @@ export default function Home() {
         <SulatLogo size={26} />
         <View style={styles.headerRight} pointerEvents="box-none">
           <Pressable
-            onPress={() => setProfileOpen(true)}
+            onPress={() => { closeAllSheets(); setProfileOpen(true); }}
             style={[styles.profileBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
           >
             <Text style={[styles.profileIcon, { color: theme.accent }]}>◉</Text>
           </Pressable>
           <Pressable
-            onPress={() => setSettingsOpen(true)}
+            onPress={() => { closeAllSheets(); setSettingsOpen(true); }}
             style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
           >
             <Text style={[styles.settingsIcon, { color: theme.accent }]}>⚙</Text>
@@ -155,7 +163,7 @@ export default function Home() {
           <Text style={styles.fabPlus}>+</Text>
         </Pressable>
 
-        <Pressable onPress={() => setLanternOpen(true)} style={styles.navBtn}>
+        <Pressable onPress={() => { closeAllSheets(); setLanternOpen(true); }} style={styles.navBtn}>
           <Text style={styles.navIcon}>🪔</Text>
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Lantern</Text>
         </Pressable>
