@@ -20,6 +20,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
   const ageDays = Math.floor((Date.now() - new Date(story.created_at).getTime()) / 86400000);
   const timeLabel = ageDays === 0 ? 'today' : ageDays === 1 ? '1d ago' : `${ageDays}d ago`;
   const [flagOpen, setFlagOpen] = useState(false);
+  const [flagged, setFlagged] = useState(false);
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
@@ -29,8 +30,11 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
         <Text style={[styles.locationLabel, { color: theme.textMuted }]}>
           {story.location_label ? story.location_label.toUpperCase() : 'SOMEWHERE'}
         </Text>
-        <Pressable onPress={() => setFlagOpen((v) => !v)} style={styles.flagHitbox}>
-          <Text style={[styles.flagTxt, { color: flagOpen ? theme.accent : theme.textMuted }]}>⚑</Text>
+        <Pressable
+          onPress={() => !flagged && setFlagOpen((v) => !v)}
+          style={styles.flagHitbox}
+        >
+          <Text style={[styles.flagTxt, { color: (flagOpen || flagged) ? theme.accent : theme.textMuted }]}>⚑</Text>
         </Pressable>
         <Pressable onPress={onClose} style={styles.closeHitbox}>
           <Text style={[styles.closeTxt, { color: theme.textMuted }]}>✕</Text>
@@ -38,7 +42,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
       </View>
 
       {flagOpen ? (
-        <FlagSheet storyId={story.id} onClose={() => setFlagOpen(false)} />
+        <FlagSheet storyId={story.id} onClose={() => { setFlagOpen(false); setFlagged(true); }} />
       ) : (
         <>
           {/* Body */}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { REACTIONS } from './catalog';
@@ -17,13 +17,11 @@ export function ReactionBar({ story, onReacted }: ReactionBarProps) {
   const [localCount, setLocalCount] = useState(story.reaction_count);
   const [localMine, setLocalMine] = useState<ReactionEmoji[]>(story.my_reactions);
 
-  // Compute per-emoji counts from story data (simplified: show total divided indicator)
-  // Full per-emoji counts would require joining emoji-level aggregates — use total for now
-  const totalPerEmoji = (emoji: ReactionEmoji) => {
-    // We only have total reaction_count, not per-emoji breakdown.
-    // Show count only on active chips (ones the user has reacted with).
-    return localMine.includes(emoji) ? 1 : 0;
-  };
+  // Re-sync when parent refreshes story data after onReacted
+  useEffect(() => {
+    setLocalCount(story.reaction_count);
+    setLocalMine(story.my_reactions);
+  }, [story.reaction_count, story.my_reactions]);
 
   const handleReact = async (emoji: ReactionEmoji) => {
     const hadIt = localMine.includes(emoji);
