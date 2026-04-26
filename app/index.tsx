@@ -10,6 +10,7 @@ import { StorySheet } from '@/story/StorySheet';
 import { ComposeSheet } from '@/compose/ComposeSheet';
 import { LanternSheet } from '@/lantern/LanternSheet';
 import { SettingsSheet } from '@/settings/SettingsSheet';
+import { ProfileModal } from '@/profile/ProfileModal';
 import { useStories } from '@/data/useStories';
 import { useViewport } from '@/map/useViewport';
 import { useTheme } from '@/theme/ThemeContext';
@@ -36,6 +37,7 @@ export default function Home() {
   const [composeCoords, setComposeCoords] = useState<{ lat: number; lng: number } | undefined>();
   const [lanternOpen, setLanternOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
 
@@ -79,6 +81,12 @@ export default function Home() {
         <View style={styles.headerRight} pointerEvents="box-none">
           <HeatmapToggle enabled={heatmapOn} onToggle={() => setHeatmapOn((v) => !v)} />
           <Pressable
+            onPress={() => setProfileOpen(true)}
+            style={[styles.profileBtn, { backgroundColor: theme.surface }]}
+          >
+            <Text style={styles.profileIcon}>◉</Text>
+          </Pressable>
+          <Pressable
             onPress={() => setSettingsOpen(true)}
             style={[styles.settingsBtn, { backgroundColor: theme.surface }]}
           >
@@ -112,6 +120,15 @@ export default function Home() {
           coords={composeCoords}
           onClose={() => setComposeOpen(false)}
           onPosted={() => { setComposeOpen(false); setRefreshKey((k) => k + 1); }}
+          bottomOffset={NAV_HEIGHT + 10}
+        />
+      )}
+
+      {/* Profile modal — floats above nav bar */}
+      {profileOpen && (
+        <ProfileModal
+          onClose={() => setProfileOpen(false)}
+          onNavigate={(lat, lng) => setFlyTarget({ lat, lng, zoom: 14 })}
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}
@@ -198,4 +215,13 @@ const styles = StyleSheet.create({
     width: 36,
   },
   settingsIcon: { fontSize: 15 },
+  profileBtn: {
+    alignItems: 'center',
+    borderRadius: 20,
+    height: 36,
+    justifyContent: 'center',
+    opacity: 0.85,
+    width: 36,
+  },
+  profileIcon: { fontSize: 15 },
 });
