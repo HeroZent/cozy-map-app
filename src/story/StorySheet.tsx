@@ -65,7 +65,12 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
       ) : (
         <>
           {/* Body */}
-          <StoryCard body={story.body} cardStyle={story.card_style} />
+          <StoryCard
+            body={story.body}
+            cardStyle={story.card_style}
+            locationLabel={story.location_label}
+            createdAt={story.created_at}
+          />
 
           {/* Reactions */}
           <ReactionBar story={story} onReacted={onReacted} />
@@ -109,7 +114,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     position: 'absolute',
     right: 12,
-    shadowColor: '#000',
+    shadowColor: '#1a0e00',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
