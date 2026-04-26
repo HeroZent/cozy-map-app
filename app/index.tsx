@@ -206,15 +206,6 @@ const styles = StyleSheet.create({
   navBtn: { alignItems: 'center', gap: 2 },
   navIcon: { fontSize: 16 },
   navLabel: { fontSize: 11, fontWeight: '500' },
-  settingsBtn: {
-    alignItems: 'center',
-    borderRadius: 20,
-    height: 36,
-    justifyContent: 'center',
-    opacity: 0.85,
-    width: 36,
-  },
-  settingsIcon: { fontSize: 15 },
   profileBtn: {
     alignItems: 'center',
     borderRadius: 20,
@@ -224,4 +215,13 @@ const styles = StyleSheet.create({
     width: 36,
   },
   profileIcon: { fontSize: 15 },
+  settingsBtn: {
+    alignItems: 'center',
+    borderRadius: 20,
+    height: 36,
+    justifyContent: 'center',
+    opacity: 0.85,
+    width: 36,
+  },
+  settingsIcon: { fontSize: 15 },
 });
