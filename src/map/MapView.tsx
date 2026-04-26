@@ -4,7 +4,6 @@ import type { MapMouseEvent } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '@/theme/ThemeContext';
 import { useViewport } from './useViewport';
-import { FogLayer } from './FogLayer';
 import type { LatLng } from '@/lib/geo';
 
 export interface FlyTarget extends LatLng {
@@ -56,7 +55,6 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
         }
       }}
     >
-      <FogLayer />
       {children}
     </Map>
   );
