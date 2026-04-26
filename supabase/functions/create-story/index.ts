@@ -27,7 +27,7 @@ const GRID = 0.0045;
 function round500m(n: number) { return Math.round(n / GRID) * GRID; }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: cors });
 
   const authHeader = req.headers.get('Authorization');
