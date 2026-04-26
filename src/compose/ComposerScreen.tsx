@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MoodPicker } from './MoodPicker';
 import { TextEditor } from './TextEditor';
 import { LocationPicker, type PickedLocation } from './LocationPicker';
 import { useCreateStory } from '@/data/useCreateStory';
+import { useTheme } from '@/theme/ThemeContext';
 import type { Mood } from '@/data/types';
 
 type Step =
@@ -17,6 +18,7 @@ export function ComposerScreen() {
   const [step, setStep] = useState<Step>({ kind: 'mood' });
   const router = useRouter();
   const create = useCreateStory();
+  const theme = useTheme();
 
   const submit = async (mood: Mood, body: string, loc: PickedLocation) => {
     setStep({ kind: 'submitting' });
@@ -24,7 +26,7 @@ export function ComposerScreen() {
       await create({ mood, body, ...loc });
       router.replace('/');
     } catch (e) {
-      alert(`Could not post: ${(e as Error).message}`);
+      Alert.alert('Could not post', (e as Error).message);
       setStep({ kind: 'location', mood, body });
     }
   };
@@ -41,7 +43,9 @@ export function ComposerScreen() {
         <LocationPicker onPick={(loc) => submit(step.mood, step.body, loc)} />
       )}
       {step.kind === 'submitting' && (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} />
+        <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
+          <ActivityIndicator color={theme.accent} size="large" />
+        </View>
       )}
     </View>
   );

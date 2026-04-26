@@ -50,7 +50,7 @@ export function LocationCity({ onPick }: LocationCityProps) {
       <View style={styles.results}>
         {results.map((r, i) => (
           <Pressable
-            key={`${r.label}-${i}`}
+            key={`${r.lat}-${r.lng}`}
             onPress={() => onPick({ lat: r.lat, lng: r.lng }, r.label)}
             style={[styles.result, { backgroundColor: theme.surface }]}
           >

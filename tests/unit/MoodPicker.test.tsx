@@ -6,7 +6,7 @@ const MOOD_NAMES = ['Regret', 'On my mind', 'Struggling', 'Hopeful', 'Memory', '
 
 test('renders all 8 moods and emits onPick', () => {
   const onPick = jest.fn();
-  const { getByText, getAllByText } = render(
+  const { getByText } = render(
     <ThemeProvider>
       <MoodPicker onPick={onPick} />
     </ThemeProvider>,
@@ -14,7 +14,6 @@ test('renders all 8 moods and emits onPick', () => {
   for (const name of MOOD_NAMES) {
     expect(getByText(name)).toBeTruthy();
   }
-  expect(getAllByText(/./)).toBeTruthy();
   fireEvent.press(getByText('Hopeful'));
   expect(onPick).toHaveBeenCalledWith('hopeful');
 });

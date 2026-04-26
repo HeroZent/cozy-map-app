@@ -1,0 +1,114 @@
+<h2>Pick your mood categories</h2>
+<p class="subtitle">Click the ones you want to include. The selected moods become pin icons on the map and post filters. Aim for 5–8 — fewer feels intentional, more feels overwhelming.</p>
+
+<style>
+  .mood-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 16px; }
+  .mood { padding: 18px 14px; border-radius: 14px; text-align: center; cursor: pointer; border: 2px solid transparent; background: rgba(255,255,255,0.04); transition: all 0.15s ease; }
+  .mood:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+  .mood.selected { border-color: #c9a96e; background: rgba(201,169,110,0.12); }
+  .mood .emoji { font-size: 38px; line-height: 1; margin-bottom: 8px; display: block; }
+  .mood .name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .mood .desc { font-size: 12px; opacity: 0.7; line-height: 1.3; }
+  .mood .original { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(201,169,110,0.2); color: #c9a96e; margin-top: 6px; }
+</style>
+
+<div class="options" data-multiselect>
+
+  <div class="option mood" data-choice="regret" onclick="toggleSelect(this)">
+    <span class="emoji">🌙</span>
+    <div class="name">Regret</div>
+    <div class="desc">Things I wish I'd done differently</div>
+    <span class="original">original 5</span>
+  </div>
+
+  <div class="option mood" data-choice="onmind" onclick="toggleSelect(this)">
+    <span class="emoji">💭</span>
+    <div class="name">On my mind</div>
+    <div class="desc">Whatever I'm thinking right now</div>
+    <span class="original">original 5</span>
+  </div>
+
+  <div class="option mood" data-choice="struggling" onclick="toggleSelect(this)">
+    <span class="emoji">🌧️</span>
+    <div class="name">Struggling</div>
+    <div class="desc">Going through something hard</div>
+    <span class="original">original 5</span>
+  </div>
+
+  <div class="option mood" data-choice="hopeful" onclick="toggleSelect(this)">
+    <span class="emoji">🌱</span>
+    <div class="name">Hopeful</div>
+    <div class="desc">Looking forward, feeling lighter</div>
+    <span class="original">original 5</span>
+  </div>
+
+  <div class="option mood" data-choice="memory" onclick="toggleSelect(this)">
+    <span class="emoji">🕯️</span>
+    <div class="name">Memory</div>
+    <div class="desc">Honoring someone or something I miss</div>
+    <span class="original">original 5</span>
+  </div>
+
+  <div class="option mood" data-choice="unsent" onclick="toggleSelect(this)">
+    <span class="emoji">💌</span>
+    <div class="name">Unsent letter</div>
+    <div class="desc">Something I never said to someone</div>
+  </div>
+
+  <div class="option mood" data-choice="confession" onclick="toggleSelect(this)">
+    <span class="emoji">🤫</span>
+    <div class="name">Confession</div>
+    <div class="desc">A secret I've been carrying</div>
+  </div>
+
+  <div class="option mood" data-choice="gratitude" onclick="toggleSelect(this)">
+    <span class="emoji">🙏</span>
+    <div class="name">Gratitude</div>
+    <div class="desc">Thank you's I never said out loud</div>
+  </div>
+
+  <div class="option mood" data-choice="asking" onclick="toggleSelect(this)">
+    <span class="emoji">❓</span>
+    <div class="name">Asking</div>
+    <div class="desc">Asking the world for advice or help</div>
+  </div>
+
+  <div class="option mood" data-choice="dream" onclick="toggleSelect(this)">
+    <span class="emoji">✨</span>
+    <div class="name">Dream</div>
+    <div class="desc">Something I want for my life</div>
+  </div>
+
+  <div class="option mood" data-choice="crush" onclick="toggleSelect(this)">
+    <span class="emoji">🌸</span>
+    <div class="name">Crush / Love</div>
+    <div class="desc">Quiet feelings for someone</div>
+  </div>
+
+  <div class="option mood" data-choice="goodbye" onclick="toggleSelect(this)">
+    <span class="emoji">👋</span>
+    <div class="name">Goodbye</div>
+    <div class="desc">Saying farewell to a chapter</div>
+  </div>
+
+  <div class="option mood" data-choice="forgiveness" onclick="toggleSelect(this)">
+    <span class="emoji">🤍</span>
+    <div class="name">Forgiveness</div>
+    <div class="desc">Letting go of something that hurt</div>
+  </div>
+
+  <div class="option mood" data-choice="proud" onclick="toggleSelect(this)">
+    <span class="emoji">🏔️</span>
+    <div class="name">Proud</div>
+    <div class="desc">A small win nobody else knows</div>
+  </div>
+
+  <div class="option mood" data-choice="lonely" onclick="toggleSelect(this)">
+    <span class="emoji">🌌</span>
+    <div class="name">Lonely</div>
+    <div class="desc">Feeling unseen or alone</div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top: 24px; text-align: center;">My recommendation: the original 5 + Unsent letter + Gratitude + Asking = 8 moods. Wide enough to cover what people actually want to share, narrow enough to stay intentional.</p>

@@ -1,0 +1,163 @@
+<h2>Pick the cozy aesthetic</h2>
+<p class="subtitle">Each direction sets the color palette, mood, and how pins look on the map. Click the one that feels closest to your vision.</p>
+
+<style>
+  .aesthetic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-top: 18px; }
+  .aesthetic { padding: 0; border-radius: 16px; cursor: pointer; overflow: hidden; border: 3px solid transparent; transition: all 0.2s ease; }
+  .aesthetic:hover { transform: translateY(-3px); }
+  .aesthetic.selected { border-color: #c9a96e; box-shadow: 0 8px 24px rgba(201,169,110,0.3); }
+  .aesthetic-preview { aspect-ratio: 16 / 10; position: relative; overflow: hidden; }
+  .aesthetic-info { padding: 14px 16px; background: rgba(255,255,255,0.03); }
+  .aesthetic-info h3 { margin: 0 0 4px 0; font-size: 17px; }
+  .aesthetic-info .palette { display: flex; gap: 6px; margin-top: 10px; }
+  .swatch { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); }
+  .aesthetic-info p { font-size: 13px; opacity: 0.8; margin: 6px 0 0; line-height: 1.4; }
+
+  /* Lantern Glow */
+  .lantern { background: radial-gradient(circle at 30% 60%, #1a1f3a 0%, #0a0e22 70%); }
+  .lantern .pin { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #f4c97a; box-shadow: 0 0 16px 4px rgba(244,201,122,0.7); animation: pulse 3s ease-in-out infinite; }
+  .lantern .pin.p1 { top: 35%; left: 28%; }
+  .lantern .pin.p2 { top: 60%; left: 55%; animation-delay: 1s; }
+  .lantern .pin.p3 { top: 25%; left: 70%; animation-delay: 2s; }
+  .lantern .pin.p4 { top: 70%; left: 22%; width: 10px; height: 10px; animation-delay: 0.5s; }
+  .lantern .land { position: absolute; inset: 0; background:
+    radial-gradient(ellipse 30% 18% at 35% 55%, #2a3055 0%, transparent 70%),
+    radial-gradient(ellipse 22% 14% at 65% 35%, #2a3055 0%, transparent 70%),
+    radial-gradient(ellipse 18% 12% at 75% 70%, #2a3055 0%, transparent 70%); }
+  @keyframes pulse { 0%, 100% { opacity: 0.85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }
+
+  /* Pastel Dawn */
+  .pastel { background: linear-gradient(160deg, #ffe9e0 0%, #f7e3d8 50%, #e8dcc8 100%); }
+  .pastel .land { position: absolute; inset: 0; background:
+    radial-gradient(ellipse 32% 20% at 35% 55%, #c8d8b8 0%, transparent 70%),
+    radial-gradient(ellipse 22% 14% at 65% 35%, #d4c2a3 0%, transparent 70%),
+    radial-gradient(ellipse 18% 12% at 75% 70%, #b8c5a3 0%, transparent 70%); }
+  .pastel .pin { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .pastel .pin.p1 { top: 32%; left: 25%; background: #f5b8a8; }
+  .pastel .pin.p2 { top: 58%; left: 52%; background: #c9d8a8; }
+  .pastel .pin.p3 { top: 22%; left: 68%; background: #e8c8a8; }
+  .pastel .pin.p4 { top: 68%; left: 20%; background: #d8b8c8; }
+
+  /* Stargazer */
+  .star { background: linear-gradient(180deg, #1a0d2e 0%, #0d0820 100%); position: relative; }
+  .star::before { content: ''; position: absolute; inset: 0; background-image:
+    radial-gradient(1px 1px at 12% 18%, white, transparent),
+    radial-gradient(1px 1px at 82% 28%, white, transparent),
+    radial-gradient(1px 1px at 38% 78%, white, transparent),
+    radial-gradient(1px 1px at 92% 88%, white, transparent),
+    radial-gradient(1px 1px at 22% 92%, white, transparent),
+    radial-gradient(1px 1px at 58% 12%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 72% 62%, rgba(255,255,255,0.7), transparent); }
+  .star .land { position: absolute; inset: 0; background:
+    radial-gradient(ellipse 30% 18% at 35% 55%, rgba(120,80,180,0.25) 0%, transparent 70%),
+    radial-gradient(ellipse 22% 14% at 65% 35%, rgba(120,80,180,0.25) 0%, transparent 70%); }
+  .star .pin { position: absolute; width: 4px; height: 4px; background: #d0b8ff; border-radius: 50%; box-shadow: 0 0 8px 2px rgba(208,184,255,0.9); }
+  .star .pin::before { content: ''; position: absolute; width: 16px; height: 1px; background: linear-gradient(90deg, transparent, #d0b8ff, transparent); top: 50%; left: -6px; }
+  .star .pin::after { content: ''; position: absolute; width: 1px; height: 16px; background: linear-gradient(180deg, transparent, #d0b8ff, transparent); left: 50%; top: -6px; }
+  .star .pin.p1 { top: 35%; left: 30%; }
+  .star .pin.p2 { top: 60%; left: 56%; }
+  .star .pin.p3 { top: 28%; left: 72%; }
+
+  /* Forest Journal */
+  .forest { background: #e8dcc4; position: relative; }
+  .forest::before { content: ''; position: absolute; inset: 0; opacity: 0.35; background-image:
+    repeating-linear-gradient(0deg, transparent 0, transparent 28px, rgba(120,90,60,0.15) 28px, rgba(120,90,60,0.15) 29px); }
+  .forest .land { position: absolute; inset: 0; background:
+    radial-gradient(ellipse 30% 18% at 35% 55%, #a8b48a 0%, transparent 65%),
+    radial-gradient(ellipse 22% 14% at 65% 35%, #c4a878 0%, transparent 65%),
+    radial-gradient(ellipse 18% 12% at 75% 70%, #8a9870 0%, transparent 65%); filter: blur(0.5px); }
+  .forest .pin { position: absolute; font-size: 22px; filter: sepia(0.3) saturate(0.8); }
+  .forest .pin.p1 { top: 30%; left: 25%; }
+  .forest .pin.p2 { top: 56%; left: 52%; }
+  .forest .pin.p3 { top: 22%; left: 68%; }
+  .forest .pin.p4 { top: 66%; left: 22%; }
+</style>
+
+<div class="options" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:18px;">
+
+  <div class="option aesthetic" data-choice="lantern" onclick="toggleSelect(this)">
+    <div class="aesthetic-preview lantern">
+      <div class="land"></div>
+      <div class="pin p1"></div>
+      <div class="pin p2"></div>
+      <div class="pin p3"></div>
+      <div class="pin p4"></div>
+    </div>
+    <div class="aesthetic-info">
+      <h3>🏮 Lantern Glow</h3>
+      <p>Dark navy night map. Pins are warm amber lights — like floating paper lanterns or fireflies. Pulses gently. Feels intimate, late-night, contemplative.</p>
+      <div class="palette">
+        <div class="swatch" style="background:#0a0e22"></div>
+        <div class="swatch" style="background:#1a1f3a"></div>
+        <div class="swatch" style="background:#f4c97a"></div>
+        <div class="swatch" style="background:#c9a96e"></div>
+        <div class="swatch" style="background:#f5e6c8"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option aesthetic" data-choice="pastel" onclick="toggleSelect(this)">
+    <div class="aesthetic-preview pastel">
+      <div class="land"></div>
+      <div class="pin p1"></div>
+      <div class="pin p2"></div>
+      <div class="pin p3"></div>
+      <div class="pin p4"></div>
+    </div>
+    <div class="aesthetic-info">
+      <h3>🌸 Pastel Dawn</h3>
+      <p>Soft cream and blush daylight map. Round pastel pins with mood emoji inside. Light, airy, hopeful — like a cozy morning. Most accessible / friendliest.</p>
+      <div class="palette">
+        <div class="swatch" style="background:#ffe9e0"></div>
+        <div class="swatch" style="background:#f7e3d8"></div>
+        <div class="swatch" style="background:#c9d8a8"></div>
+        <div class="swatch" style="background:#f5b8a8"></div>
+        <div class="swatch" style="background:#5a4a3a"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option aesthetic" data-choice="stargazer" onclick="toggleSelect(this)">
+    <div class="aesthetic-preview star">
+      <div class="land"></div>
+      <div class="pin p1"></div>
+      <div class="pin p2"></div>
+      <div class="pin p3"></div>
+    </div>
+    <div class="aesthetic-info">
+      <h3>✨ Stargazer</h3>
+      <p>Deep midnight purple. Pins are tiny twinkling stars with cross-glow. Feels somber, intimate, vast — the world's quiet thoughts as a sky. Memorial-leaning.</p>
+      <div class="palette">
+        <div class="swatch" style="background:#0d0820"></div>
+        <div class="swatch" style="background:#1a0d2e"></div>
+        <div class="swatch" style="background:#d0b8ff"></div>
+        <div class="swatch" style="background:#7850b4"></div>
+        <div class="swatch" style="background:#ffffff"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option aesthetic" data-choice="forest" onclick="toggleSelect(this)">
+    <div class="aesthetic-preview forest">
+      <div class="land"></div>
+      <div class="pin p1">🌙</div>
+      <div class="pin p2">🌱</div>
+      <div class="pin p3">🕯️</div>
+      <div class="pin p4">💌</div>
+    </div>
+    <div class="aesthetic-info">
+      <h3>📜 Forest Journal</h3>
+      <p>Kraft paper / parchment map with hand-drawn feel. Pins are the mood emojis, slightly faded, sepia-toned. Like flipping through someone's travel journal.</p>
+      <div class="palette">
+        <div class="swatch" style="background:#e8dcc4"></div>
+        <div class="swatch" style="background:#c4a878"></div>
+        <div class="swatch" style="background:#8a9870"></div>
+        <div class="swatch" style="background:#5a4a3a"></div>
+        <div class="swatch" style="background:#a85530"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px;text-align:center;">My recommendation: <strong>🏮 Lantern Glow</strong> — pulsing amber lights on a dark map best evokes "anonymous voices in the world", and the heatmap density overlay you wanted reads beautifully against dark navy.</p>

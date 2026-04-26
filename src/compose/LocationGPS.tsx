@@ -20,9 +20,13 @@ export function LocationGPS({ onPick }: LocationGPSProps) {
       setStatus('denied');
       return;
     }
-    const { coords: c } = await Location.getCurrentPositionAsync({});
-    setCoords({ lat: c.latitude, lng: c.longitude });
-    setStatus('got');
+    try {
+      const { coords: c } = await Location.getCurrentPositionAsync({});
+      setCoords({ lat: c.latitude, lng: c.longitude });
+      setStatus('got');
+    } catch {
+      setStatus('denied');
+    }
   };
 
   return (
