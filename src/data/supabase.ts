@@ -8,8 +8,8 @@ import * as SecureStore from 'expo-secure-store';
 // expo-router's Node runner and process.env.EXPO_PUBLIC_* may be undefined there.
 // Placeholder fallbacks prevent createClient from throwing during the build-time SSR
 // shell render — these values are never used at runtime (Metro inlines the real ones).
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co';
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder-anon-key-for-ssr-only';
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key-for-ssr-only';
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => SecureStore.getItemAsync(key),

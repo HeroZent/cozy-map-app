@@ -15,7 +15,7 @@
     },
     "ios": { "supportsTablet": false, "bundleIdentifier": "ph.sulat.app" },
     "android": { "package": "ph.sulat.app", "adaptiveIcon": { "backgroundColor": "#0a0e22" } },
-    "web": { "bundler": "metro", "output": "static", "favicon": "./assets/favicon.png" },
+    "web": { "bundler": "metro", "output": "single", "favicon": "./assets/favicon.png" },
     "plugins": ["expo-router", "expo-secure-store", "expo-location"],
     "experiments": { "typedRoutes": true }
   }
