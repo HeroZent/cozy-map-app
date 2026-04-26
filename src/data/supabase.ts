@@ -17,13 +17,14 @@ const ExpoSecureStoreAdapter = {
 };
 
 const WebStorageAdapter = {
-  getItem: (key: string) => Promise.resolve(window.localStorage.getItem(key)),
+  getItem: (key: string) =>
+    Promise.resolve(typeof window !== 'undefined' ? window.localStorage.getItem(key) : null),
   setItem: (key: string, value: string) => {
-    window.localStorage.setItem(key, value);
+    if (typeof window !== 'undefined') window.localStorage.setItem(key, value);
     return Promise.resolve();
   },
   removeItem: (key: string) => {
-    window.localStorage.removeItem(key);
+    if (typeof window !== 'undefined') window.localStorage.removeItem(key);
     return Promise.resolve();
   },
 };

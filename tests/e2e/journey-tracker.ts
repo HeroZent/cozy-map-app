@@ -17,6 +17,7 @@ export class JourneyTracker {
         background: rgba(20,26,58,0.92); color: #f5e6c8; font-family: monospace;
         padding: 10px 14px; border: 1px solid rgba(244,201,122,0.5);
         border-radius: 10px; font-size: 12px; min-width: 220px;
+        pointer-events: none;
       `;
       const title = document.createElement('div');
       title.textContent = 'JOURNEY';

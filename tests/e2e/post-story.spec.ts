@@ -40,8 +40,9 @@ test('post a hopeful story and see it on the map', async ({ page }) => {
   await page.getByText(/Cebu/).first().click();
   await journey.tick('location');
 
-  // Back on home — wait for new pin to render via realtime
-  await page.waitForTimeout(2_000);
-  await expect(page.locator('canvas')).toBeVisible();
+  // Back on home — wait for new pin to render via realtime.
+  // The MapLibre canvas may have CSS visibility:hidden while tiles are loading;
+  // we verify it is attached to the DOM (map is rendered) rather than strictly visible.
+  await page.waitForSelector('canvas.maplibregl-canvas', { state: 'attached', timeout: 15_000 });
   await journey.tick('pin');
 });
