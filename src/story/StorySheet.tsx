@@ -5,6 +5,7 @@ import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
 import { ReactionBar } from '@/reactions/ReactionBar';
 import { FlagSheet } from '@/reactions/FlagSheet';
+import { ReplyThread } from '@/replies/ReplyThread';
 import type { Story } from '@/data/types';
 
 export interface StorySheetProps {
@@ -21,6 +22,11 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
   const timeLabel = ageDays === 0 ? 'today' : ageDays === 1 ? '1d ago' : `${ageDays}d ago`;
   const [flagOpen, setFlagOpen] = useState(false);
   const [flagged, setFlagged] = useState(false);
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [replyCount, setReplyCount] = useState(story.reply_count);
+
+  const replyLabel =
+    replyCount > 0 ? `💬 ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : '💬 Reply';
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
@@ -61,14 +67,27 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
           {/* Reactions */}
           <ReactionBar story={story} onReacted={onReacted} />
 
+          {/* Reply thread (lazy — mounts on first open) */}
+          {threadOpen && (
+            <ReplyThread
+              storyId={story.id}
+              onCountChange={(delta) => setReplyCount((c) => c + delta)}
+            />
+          )}
+
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={[styles.footerTxt, { color: theme.textMuted }]}>
-              {mood?.emoji}  {mood?.name}  ·  {timeLabel}
+              {mood?.emoji}{'  '}{mood?.name}{'  ·  '}{timeLabel}
             </Text>
             {story.is_memory && (
               <Text style={[styles.memoryBadge, { color: theme.pinMemory.body }]}>✦ memory</Text>
             )}
+            <Pressable onPress={() => setThreadOpen((v) => !v)} style={styles.replyHitbox}>
+              <Text style={[styles.replyToggle, { color: threadOpen ? theme.accent : theme.textMuted }]}>
+                {replyLabel}
+              </Text>
+            </Pressable>
           </View>
         </>
       )}
@@ -83,7 +102,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     elevation: 12,
     left: 12,
-    maxHeight: 280,
+    maxHeight: 480,
     paddingBottom: 14,
     paddingHorizontal: 16,
     paddingTop: 14,
@@ -104,4 +123,6 @@ const styles = StyleSheet.create({
   locationPin: { fontSize: 11, marginRight: 4 },
   locationRow: { alignItems: 'center', flexDirection: 'row', gap: 4, marginBottom: 10 },
   memoryBadge: { fontSize: 11, fontStyle: 'italic', marginLeft: 10 },
+  replyHitbox: { marginLeft: 'auto', padding: 4 },
+  replyToggle: { fontSize: 12 },
 });
