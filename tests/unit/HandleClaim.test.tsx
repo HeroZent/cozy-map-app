@@ -56,7 +56,7 @@ test('calls onClaimed with the trimmed handle on success', async () => {
   const { getByPlaceholderText, getByText } = wrap(
     <HandleClaim userId="u1" onClaimed={onClaimed} />
   );
-  fireEvent.changeText(getByPlaceholderText('e.g. cozy_writer'), 'valid_handle');
+  fireEvent.changeText(getByPlaceholderText('e.g. cozy_writer'), ' valid_handle ');
   fireEvent.press(getByText('Claim handle'));
   await waitFor(() => {
     expect(onClaimed).toHaveBeenCalledWith('valid_handle');

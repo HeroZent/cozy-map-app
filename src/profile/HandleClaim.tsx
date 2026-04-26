@@ -27,25 +27,29 @@ export function HandleClaim({ userId, onClaimed }: HandleClaimProps) {
     setSubmitting(true);
     setError(null);
 
-    const { error: dbErr } = await supabase
-      .from('users')
-      .update({ display_handle: trimmed })
-      .eq('id', userId);
+    try {
+      const { error: dbErr } = await supabase
+        .from('users')
+        .update({ display_handle: trimmed })
+        .eq('id', userId);
 
-    setSubmitting(false);
-
-    if (dbErr) {
-      if (dbErr.code === '23505') {
-        setError('that handle is already taken');
-      } else if (dbErr.code === '23514') {
-        setError('3–20 chars, letters, numbers, and underscores only');
-      } else {
-        setError('something went wrong, try again');
+      if (dbErr) {
+        if (dbErr.code === '23505') {
+          setError('that handle is already taken');
+        } else if (dbErr.code === '23514') {
+          setError('3–20 chars, letters, numbers, and underscores only');
+        } else {
+          setError('something went wrong, try again');
+        }
+        return;
       }
-      return;
-    }
 
-    onClaimed(trimmed);
+      onClaimed(trimmed);
+    } catch {
+      setError('something went wrong, try again');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
