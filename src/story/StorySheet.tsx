@@ -89,7 +89,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
               <Text style={[styles.memoryBadge, { color: theme.pinMemory.body }]}>✦ memory</Text>
             )}
             <Pressable onPress={() => setThreadOpen((v) => !v)} style={styles.replyHitbox}>
-              <Text style={[styles.replyToggle, { color: threadOpen ? theme.accent : theme.textMuted }]}>
+              <Text style={[styles.replyToggle, { color: (threadOpen || replyCount > 0) ? theme.accent : theme.textMuted, fontWeight: replyCount > 0 ? '600' : '400' }]}>
                 {replyLabel}
               </Text>
             </Pressable>
