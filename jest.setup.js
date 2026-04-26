@@ -1,9 +1,19 @@
 // Load .env.local for integration tests (Expo env vars aren't auto-loaded by Jest).
 require('dotenv').config({ path: '.env.local' });
 
-// Silence specific RN warnings during tests.
+// Mock expo-secure-store with an in-memory store so Supabase can persist its
+// auth session tokens during a test run. Using all-null stubs would cause
+// Supabase JS to lose the JWT between signInAnonymously() and subsequent DB
+// calls, making every RLS-gated insert fail.
+const secureStoreMemory = {};
 jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn().mockResolvedValue(null),
-  setItemAsync: jest.fn().mockResolvedValue(undefined),
-  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+  getItemAsync: jest.fn((key) => Promise.resolve(secureStoreMemory[key] ?? null)),
+  setItemAsync: jest.fn((key, value) => {
+    secureStoreMemory[key] = value;
+    return Promise.resolve();
+  }),
+  deleteItemAsync: jest.fn((key) => {
+    delete secureStoreMemory[key];
+    return Promise.resolve();
+  }),
 }));
