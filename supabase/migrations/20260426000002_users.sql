@@ -1,5 +1,5 @@
 create table public.users (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   device_fingerprint text not null unique,
   email text unique,
   display_handle text,

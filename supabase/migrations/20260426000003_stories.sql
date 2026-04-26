@@ -8,7 +8,7 @@ create type pin_mode as enum ('gps', 'dropped', 'city');
 create type story_status as enum ('live', 'hidden', 'flagged', 'removed');
 
 create table public.stories (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   author_id uuid not null references public.users(id) on delete cascade,
   mood story_mood not null,
   body text not null check (char_length(body) <= 1000 and char_length(body) >= 1),
