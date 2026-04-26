@@ -55,6 +55,21 @@ test('shows reaction badge when reaction_count > 0', () => {
   expect(getByText('✦ 3')).toBeTruthy();
 });
 
+test('falls back to "somewhere" when location_label is null', () => {
+  const story = { ...BASE, location_label: null };
+  const { getByText } = wrap(
+    <MySulatRow story={story} isUnread={false} onNavigate={jest.fn()} />
+  );
+  expect(getByText(/somewhere/)).toBeTruthy();
+});
+
+test('shows "today" for a story created now', () => {
+  const { getByText } = wrap(
+    <MySulatRow story={BASE} isUnread={false} onNavigate={jest.fn()} />
+  );
+  expect(getByText(/today/)).toBeTruthy();
+});
+
 test('calls onNavigate when the row is pressed', () => {
   const onNavigate = jest.fn();
   const { getByText } = wrap(

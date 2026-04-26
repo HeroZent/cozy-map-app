@@ -29,7 +29,7 @@ export function MySulatRow({ story, isUnread, onNavigate }: MySulatRowProps) {
           </Text>
           {story.reaction_count > 0 && (
             <Text style={[styles.badge, { color: theme.accent }]}>
-              {'✦ '}{story.reaction_count}
+              {`✦ ${story.reaction_count}`}
             </Text>
           )}
           {isUnread && (
