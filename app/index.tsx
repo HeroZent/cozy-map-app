@@ -115,7 +115,10 @@ export default function Home() {
       {lanternOpen && (
         <LanternSheet
           onClose={() => setLanternOpen(false)}
-          onSelectStory={(story) => { setLanternOpen(false); setSelectedStory(story); }}
+          onSelectStory={(story) => {
+            const [lng, lat] = story.location.coordinates as [number, number];
+            setFlyTarget({ lat, lng, zoom: 14 });
+          }}
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}
