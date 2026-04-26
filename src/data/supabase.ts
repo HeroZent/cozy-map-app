@@ -4,10 +4,12 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // EXPO_PUBLIC_* vars are inlined by Metro into the client bundle at build time.
-// During Expo's static rendering step (SSR/Node.js), they resolve to undefined —
-// so we fall back to empty strings to avoid crashing the build.
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+// During Expo's static rendering step (SSR/Node.js), the raw source is evaluated by
+// expo-router's Node runner and process.env.EXPO_PUBLIC_* may be undefined there.
+// Placeholder fallbacks prevent createClient from throwing during the build-time SSR
+// shell render — these values are never used at runtime (Metro inlines the real ones).
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co';
+const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder-anon-key-for-ssr-only';
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
