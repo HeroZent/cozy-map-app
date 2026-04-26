@@ -39,6 +39,7 @@ export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: Lante
             ...r,
             location: { type: 'Point' as const, coordinates: [r.lng, r.lat] },
             reaction_count: 0,
+            reaction_counts: {},
             my_reactions: [],
           })) as Story[],
         );

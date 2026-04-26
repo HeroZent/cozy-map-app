@@ -22,6 +22,7 @@ export interface Story {
   is_memory: boolean;
   created_at: string;
   reaction_count: number;
+  reaction_counts: Partial<Record<ReactionEmoji, number>>;
   my_reactions: ReactionEmoji[];
 }
 

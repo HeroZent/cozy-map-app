@@ -14,24 +14,24 @@ export function ReactionBar({ story, onReacted }: ReactionBarProps) {
   const theme = useTheme();
   const react = useReact();
 
-  const [localCount, setLocalCount] = useState(story.reaction_count);
+  const [localCounts, setLocalCounts] = useState<Partial<Record<ReactionEmoji, number>>>(story.reaction_counts);
   const [localMine, setLocalMine] = useState<ReactionEmoji[]>(story.my_reactions);
 
   // Re-sync when parent refreshes story data after onReacted
   useEffect(() => {
-    setLocalCount(story.reaction_count);
+    setLocalCounts(story.reaction_counts);
     setLocalMine(story.my_reactions);
-  }, [story.reaction_count, story.my_reactions]);
+  }, [story.reaction_counts, story.my_reactions]);
 
   const handleReact = async (emoji: ReactionEmoji) => {
     const hadIt = localMine.includes(emoji);
     // Optimistic update
     if (hadIt) {
       setLocalMine((prev) => prev.filter((e) => e !== emoji));
-      setLocalCount((prev) => prev - 1);
+      setLocalCounts((prev) => ({ ...prev, [emoji]: Math.max(0, (prev[emoji] ?? 0) - 1) }));
     } else {
       setLocalMine((prev) => [...prev, emoji]);
-      setLocalCount((prev) => prev + 1);
+      setLocalCounts((prev) => ({ ...prev, [emoji]: (prev[emoji] ?? 0) + 1 }));
     }
     try {
       await react(story.id, emoji);
@@ -40,10 +40,10 @@ export function ReactionBar({ story, onReacted }: ReactionBarProps) {
       // Revert on error
       if (hadIt) {
         setLocalMine((prev) => [...prev, emoji]);
-        setLocalCount((prev) => prev + 1);
+        setLocalCounts((prev) => ({ ...prev, [emoji]: (prev[emoji] ?? 0) + 1 }));
       } else {
         setLocalMine((prev) => prev.filter((e) => e !== emoji));
-        setLocalCount((prev) => prev - 1);
+        setLocalCounts((prev) => ({ ...prev, [emoji]: Math.max(0, (prev[emoji] ?? 0) - 1) }));
       }
     }
   };
@@ -52,6 +52,7 @@ export function ReactionBar({ story, onReacted }: ReactionBarProps) {
     <View style={styles.wrap}>
       {REACTIONS.map((r) => {
         const active = localMine.includes(r.emoji);
+        const count = localCounts[r.emoji] ?? 0;
         return (
           <Pressable
             key={r.emoji}
@@ -62,15 +63,14 @@ export function ReactionBar({ story, onReacted }: ReactionBarProps) {
             ]}
           >
             <Text style={styles.icon}>{r.icon}</Text>
-            {active && (
-              <Text style={[styles.count, { color: '#2a1f0a' }]}>·</Text>
+            {count > 0 && (
+              <Text style={[styles.count, { color: active ? '#2a1f0a' : theme.textMuted }]}>
+                {count}
+              </Text>
             )}
           </Pressable>
         );
       })}
-      {localCount > 0 && (
-        <Text style={[styles.total, { color: theme.textMuted }]}>{localCount}</Text>
-      )}
     </View>
   );
 }
@@ -86,6 +86,5 @@ const styles = StyleSheet.create({
   },
   count: { fontSize: 11, fontWeight: '600' },
   icon: { fontSize: 14 },
-  total: { fontSize: 12, marginLeft: 4, alignSelf: 'center' },
   wrap: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
 });

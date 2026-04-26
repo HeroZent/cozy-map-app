@@ -17,7 +17,7 @@ export interface UseStoriesResult {
 }
 
 type ReactionRow = { emoji: ReactionEmoji; user_id: string };
-type StoryRow = Omit<Story, 'location' | 'reaction_count' | 'my_reactions'> & {
+type StoryRow = Omit<Story, 'location' | 'reaction_count' | 'reaction_counts' | 'my_reactions'> & {
   lat: number;
   lng: number;
   reactions: ReactionRow[];
@@ -25,10 +25,15 @@ type StoryRow = Omit<Story, 'location' | 'reaction_count' | 'my_reactions'> & {
 
 function toStory(r: StoryRow, userId: string | null): Story {
   const reactions = r.reactions ?? [];
+  const reaction_counts: Partial<Record<ReactionEmoji, number>> = {};
+  for (const rx of reactions) {
+    reaction_counts[rx.emoji] = (reaction_counts[rx.emoji] ?? 0) + 1;
+  }
   return {
     ...r,
     location: { type: 'Point', coordinates: [r.lng, r.lat] },
     reaction_count: reactions.length,
+    reaction_counts,
     my_reactions: userId
       ? reactions.filter((rx) => rx.user_id === userId).map((rx) => rx.emoji)
       : [],
