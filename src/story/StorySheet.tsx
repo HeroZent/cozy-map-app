@@ -1,12 +1,13 @@
 // src/story/StorySheet.tsx
 import { useState, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
 import { ReactionBar } from '@/reactions/ReactionBar';
 import { FlagSheet } from '@/reactions/FlagSheet';
 import { ReplyThread } from '@/replies/ReplyThread';
 import { markSeen } from '@/profile/useUnreadReplies';
+import { StoryCard } from './StoryCard';
 import type { Story } from '@/data/types';
 
 export interface StorySheetProps {
@@ -64,17 +65,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
       ) : (
         <>
           {/* Body */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.bodyWrap}
-          >
-            <Text
-              style={[styles.body, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}
-              numberOfLines={4}
-            >
-              {story.body}
-            </Text>
-          </ScrollView>
+          <StoryCard body={story.body} cardStyle={story.card_style} />
 
           {/* Reactions */}
           <ReactionBar story={story} onReacted={onReacted} />
@@ -108,8 +99,6 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
 }
 
 const styles = StyleSheet.create({
-  body: { fontSize: 16, lineHeight: 24 },
-  bodyWrap: { paddingBottom: 4 },
   card: {
     borderRadius: 18,
     elevation: 12,
