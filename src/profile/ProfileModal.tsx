@@ -58,9 +58,14 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
   const handleStyleChange = async (id: CardStyleId) => {
     if (!user) return;
     setPreferredStyle(id);
-    await supabase.from('users').update({ preferred_card_style: id }).eq('id', user.id);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    const { error: saveErr } = await supabase
+      .from('users')
+      .update({ preferred_card_style: id })
+      .eq('id', user.id);
+    if (!saveErr) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    }
   };
 
   return (

@@ -35,7 +35,7 @@ export interface User {
   email: string | null;
   display_handle: string | null;
   theme_preference: string;
-  preferred_card_style: CardStyleId;
+  preferred_card_style: CardStyleId | null;
   banned_at: string | null;
   created_at: string;
 }

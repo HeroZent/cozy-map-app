@@ -71,7 +71,6 @@ function TornEdgeStrip({ color }: { color: string }) {
   return (
     <View style={{ height: 22, overflow: 'hidden' }}>
       <View
-        // @ts-ignore — clipPath is CSS-only, passed through on React Native Web
         style={{
           position: 'absolute',
           bottom: 0,
@@ -79,6 +78,7 @@ function TornEdgeStrip({ color }: { color: string }) {
           right: -4,
           height: 36,
           backgroundColor: color,
+          // @ts-ignore — clipPath is CSS-only, passed through on React Native Web
           clipPath:
             'polygon(0% 70%,2% 20%,5% 65%,8% 10%,11% 58%,14% 8%,18% 52%,21% 18%,25% 62%,28% 5%,32% 48%,36% 22%,40% 68%,44% 12%,48% 55%,52% 8%,56% 50%,60% 18%,64% 60%,68% 8%,72% 52%,76% 22%,80% 65%,84% 10%,88% 55%,92% 20%,96% 62%,98% 30%,100% 70%,100% 100%,0% 100%)',
         }}
@@ -109,7 +109,7 @@ export function StoryCard({ body, cardStyle }: StoryCardProps) {
         },
       ]}
     >
-      {def.tornTopEdge && <TornEdgeStrip color={def.backgroundColors[0]} />}
+      {def.tornTopEdge && <TornEdgeStrip color={def.backgroundColors[0] ?? '#000000'} />}
       <LinearGradient
         colors={gradColors}
         start={def.gradientStart}
