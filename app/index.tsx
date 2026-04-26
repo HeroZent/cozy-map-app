@@ -5,7 +5,6 @@ import { useFocusEffect } from 'expo-router';
 import { MapView } from '@/map/MapView';
 import { StoryPins } from '@/map/StoryPins';
 import { HeatmapLayer } from '@/map/HeatmapLayer';
-import { HeatmapToggle } from '@/map/HeatmapToggle';
 import { StorySheet } from '@/story/StorySheet';
 import { ComposeSheet } from '@/compose/ComposeSheet';
 import { LanternSheet } from '@/lantern/LanternSheet';
@@ -31,7 +30,7 @@ export default function Home() {
     setRefreshKey((k) => k + 1);
   }, []));
   const { stories } = useStories({ minLng: bbox[0], minLat: bbox[1], maxLng: bbox[2], maxLat: bbox[3] }, refreshKey);
-  const [heatmapOn, setHeatmapOn] = useState(false);
+  const [heatmapOn, setHeatmapOn] = useState(true);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeCoords, setComposeCoords] = useState<{ lat: number; lng: number } | undefined>();
@@ -79,7 +78,6 @@ export default function Home() {
       <View style={styles.header} pointerEvents="box-none">
         <SulatLogo size={26} />
         <View style={styles.headerRight} pointerEvents="box-none">
-          <HeatmapToggle enabled={heatmapOn} onToggle={() => setHeatmapOn((v) => !v)} />
           <Pressable
             onPress={() => setProfileOpen(true)}
             style={[styles.profileBtn, { backgroundColor: theme.surface }]}
@@ -137,6 +135,8 @@ export default function Home() {
       {settingsOpen && (
         <SettingsSheet
           onClose={() => setSettingsOpen(false)}
+          heatmapOn={heatmapOn}
+          onHeatmapToggle={() => setHeatmapOn((v) => !v)}
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}

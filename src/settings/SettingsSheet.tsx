@@ -3,10 +3,12 @@ import { useTheme } from '@/theme/ThemeContext';
 
 export interface SettingsSheetProps {
   onClose: () => void;
+  heatmapOn: boolean;
+  onHeatmapToggle: () => void;
   bottomOffset?: number;
 }
 
-export function SettingsSheet({ onClose, bottomOffset = 0 }: SettingsSheetProps) {
+export function SettingsSheet({ onClose, heatmapOn, onHeatmapToggle, bottomOffset = 0 }: SettingsSheetProps) {
   const theme = useTheme();
 
   return (
@@ -23,6 +25,7 @@ export function SettingsSheet({ onClose, bottomOffset = 0 }: SettingsSheetProps)
       <Row label="App" value="sulat. v0.1.0" theme={theme} />
       <Row label="Theme" value="Lantern Glow" theme={theme} />
       <Row label="Mode" value="Anonymous — no account needed" theme={theme} />
+      <ToggleRow label="Heatmap" enabled={heatmapOn} onToggle={onHeatmapToggle} theme={theme} />
 
       <View style={[styles.divider, { backgroundColor: 'rgba(245,230,200,0.08)' }]} />
 
@@ -42,6 +45,19 @@ function Row({ label, value, theme }: { label: string; value: string; theme: Ret
     <View style={styles.row}>
       <Text style={[styles.rowLabel, { color: theme.textMuted }]}>{label}</Text>
       <Text style={[styles.rowValue, { color: theme.textPrimary }]}>{value}</Text>
+    </View>
+  );
+}
+
+function ToggleRow({ label, enabled, onToggle, theme }: { label: string; enabled: boolean; onToggle: () => void; theme: ReturnType<typeof useTheme> }) {
+  return (
+    <View style={styles.row}>
+      <Text style={[styles.rowLabel, { color: theme.textMuted }]}>{label}</Text>
+      <Pressable onPress={onToggle} style={[styles.toggle, { borderColor: theme.accent, backgroundColor: enabled ? theme.accent : 'transparent' }]}>
+        <Text style={[styles.toggleTxt, { color: enabled ? '#2a1f0a' : theme.textMuted }]}>
+          {enabled ? 'on' : 'off'}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -68,7 +84,9 @@ const styles = StyleSheet.create({
   divider: { height: 1, marginBottom: 14, marginTop: 4 },
   header: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
   headerTitle: { fontSize: 17, fontWeight: '500' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  row: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   rowLabel: { fontSize: 13 },
   rowValue: { fontSize: 13, fontWeight: '500' },
+  toggle: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 3 },
+  toggleTxt: { fontSize: 12, fontWeight: '600' },
 });
