@@ -7,7 +7,7 @@ export interface CityResult extends LatLng {
   label: string;
 }
 
-const GRID_DEGREES = 0.0001; // ~11m per step, used to snap coordinates to 4 decimal place grid (~500m privacy rounding at city scale).
+const GRID_DEGREES = 0.0045; // ~500m at equator; close enough at all latitudes for our privacy goal.
 
 export function roundTo500m(p: LatLng): LatLng {
   return {
