@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 import type { Mood, PinMode } from './types';
 
 export interface CreateStoryArgs {
@@ -9,7 +10,18 @@ export interface CreateStoryArgs {
 }
 
 export function useCreateStory() {
-  return async function create(_args: CreateStoryArgs): Promise<string> {
-    throw new Error('useCreateStory not yet implemented');
+  return async function create({ mood, body, coords, pinMode, label }: CreateStoryArgs): Promise<string> {
+    const { data, error } = await supabase.functions.invoke('create-story', {
+      body: {
+        mood,
+        body,
+        lat: coords.lat,
+        lng: coords.lng,
+        pin_mode: pinMode,
+        location_label: label ?? null,
+      },
+    });
+    if (error) throw new Error(error.message);
+    return (data as { id: string }).id;
   };
 }
