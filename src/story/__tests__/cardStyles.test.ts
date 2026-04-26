@@ -10,9 +10,10 @@ test('getCardStyle returns correct def for known id', () => {
   expect(def.label).toBe('Dark Candlelight');
 });
 
-test('getCardStyle falls back to style a for unknown id', () => {
+test('getCardStyle falls back to CARD_STYLES[0] for unknown id', () => {
   const def = getCardStyle('unknown_xyz');
-  expect(def.id).toBe('a');
+  expect(def).toBe(CARD_STYLES[0]);
+  expect(def.id).toBe(DEFAULT_CARD_STYLE);
 });
 
 test('CARD_STYLES has exactly 5 entries', () => {
@@ -49,4 +50,12 @@ test('getCardStyle(d) has leftMarginStripe true', () => {
 
 test('getCardStyle(e) has foldCorner true', () => {
   expect(getCardStyle('e').foldCorner).toBe(true);
+});
+
+test('getCardStyle(b) has pillFooter true', () => {
+  expect(getCardStyle('b').pillFooter).toBe(true);
+});
+
+test('getCardStyle(c) has sealFooter true', () => {
+  expect(getCardStyle('c').sealFooter).toBe(true);
 });

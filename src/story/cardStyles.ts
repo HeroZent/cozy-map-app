@@ -5,7 +5,7 @@ export interface CardStyleDef {
   label: string;
   tier: 'free' | 'premium';
   backgroundColors: string[];         // 1 item = solid, 2+ = LinearGradient colors
-  gradientStart: { x: number; y: number };
+  gradientStart: { x: number; y: number }; // 0.0–1.0 normalized coordinates (LinearGradient)
   gradientEnd: { x: number; y: number };
   textColor: string;
   fontFamily: string;
@@ -106,7 +106,7 @@ export const CARD_STYLES: CardStyleDef[] = [
     id: 'd',
     label: 'Midnight Journal',
     tier: 'free',
-    backgroundColors: ['#0f0c1a', '#0f0c1a'],
+    backgroundColors: ['#0f0c1a', '#0f0c1a'], // intentional solid via identical stops for consistent LinearGradient layout
     gradientStart: { x: 0, y: 0 },
     gradientEnd: { x: 0, y: 1 },
     textColor: '#e8deff',
