@@ -41,6 +41,7 @@ export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: Lante
             reaction_count: 0,
             reaction_counts: {},
             my_reactions: [],
+            reply_count: 0,
           })) as Story[],
         );
       }
