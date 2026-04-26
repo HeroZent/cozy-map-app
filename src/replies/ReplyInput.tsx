@@ -15,16 +15,21 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isEmpty = draft.trim().length === 0;
+
   const handleSend = async () => {
-    const trimmed = draft.trim();
-    if (!trimmed || submitting) return;
+    if (isEmpty || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(trimmed);
+      await onSubmit(draft.trim());
       setDraft('');
     } catch (e) {
-      setError((e as Error).message || 'Something went wrong. Try again.');
+      setError(
+        e instanceof Error ? e.message :
+        typeof e === 'string' ? e :
+        'Something went wrong. Try again.',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -49,13 +54,12 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
             setError(null);
           }}
           editable={!submitting}
-          maxLength={MAX_CHARS}
           multiline
         />
         <Pressable
-          style={[styles.sendBtn, { backgroundColor: theme.accent, opacity: (!draft.trim() || submitting) ? 0.4 : 1 }]}
+          style={[styles.sendBtn, { backgroundColor: theme.accent, opacity: (isEmpty || submitting) ? 0.4 : 1 }]}
           onPress={handleSend}
-          disabled={submitting || !draft.trim()}
+          disabled={submitting || isEmpty}
         >
           {submitting ? (
             <ActivityIndicator color={theme.background} size="small" />
