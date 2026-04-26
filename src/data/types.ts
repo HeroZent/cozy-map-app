@@ -24,6 +24,7 @@ export interface Story {
   reaction_count: number;
   reaction_counts: Partial<Record<ReactionEmoji, number>>;
   my_reactions: ReactionEmoji[];
+  reply_count: number;
 }
 
 export interface User {
