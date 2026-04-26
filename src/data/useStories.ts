@@ -62,9 +62,10 @@ export function useStories(bbox: Bbox): UseStoriesResult {
       }
     })();
 
-    // Realtime subscription — push new live stories into the list
+    // Unique name per mount so React Strict Mode double-invoke doesn't hit an already-subscribed channel
+    const channelName = `stories-live-${Math.random().toString(36).slice(2)}`;
     const channel = supabase
-      .channel('stories-live')
+      .channel(channelName)
       .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'stories', filter: 'status=eq.live' },
           (payload) => {
