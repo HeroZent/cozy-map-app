@@ -14,25 +14,26 @@ export function ReplyBubble({ reply }: ReplyBubbleProps) {
 
   return (
     <View style={[styles.bubble, { backgroundColor: theme.background }]}>
-      <Text style={[styles.handle, { color: theme.accent }]}>{handle}</Text>
-      <Text style={[styles.sep, { color: theme.textMuted }]}>{' · '}</Text>
-      <Text style={[styles.body, { color: theme.textPrimary }]}>{reply.body}</Text>
-      <Text style={[styles.time, { color: theme.textMuted }]}>{timeLabel}</Text>
+      <Text style={styles.content}>
+        <Text style={[styles.handle, { color: theme.accent }]}>{handle}</Text>
+        <Text style={[styles.sep, { color: theme.textMuted }]}>{' · '}</Text>
+        <Text style={[styles.body, { color: theme.textPrimary }]}>{reply.body}</Text>
+        {'  '}
+        <Text style={[styles.time, { color: theme.textMuted }]}>{timeLabel}</Text>
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flexShrink: 1, fontSize: 13, lineHeight: 18 },
+  body: { fontSize: 13 },
   bubble: {
-    alignItems: 'flex-start',
     borderRadius: 10,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     marginBottom: 6,
     padding: 10,
   },
-  handle: { fontSize: 12, fontWeight: '600' },
-  sep: { fontSize: 13 },
-  time: { fontSize: 11, marginLeft: 4 },
+  content: { fontSize: 13, lineHeight: 20 },
+  handle: { fontWeight: '600' },
+  sep: {},
+  time: { fontSize: 11 },
 });
