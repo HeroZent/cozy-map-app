@@ -1,17 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { MapView } from '@/map/MapView';
 
 export default function Home() {
   return (
-    <View style={styles.container}>
-      <Text>Sulat — Foundation MVP scaffold</Text>
+    <View style={{ flex: 1 }}>
+      <MapView />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-});
