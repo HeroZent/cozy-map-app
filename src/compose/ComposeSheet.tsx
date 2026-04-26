@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, ScrollView, Pressable,
+  View, Text, ScrollView, Pressable,
   StyleSheet, ActivityIndicator,
 } from 'react-native';
 import * as Location from 'expo-location';
@@ -12,6 +12,7 @@ import type { Mood } from '@/data/types';
 import { useUser } from '@/data/useUser';
 import { StylePicker } from '@/story/StylePicker';
 import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
+import { ComposeCard } from './ComposeCard';
 
 export interface ComposeSheetProps {
   /** Pre-filled from double-click. Undefined = use GPS. */
@@ -126,28 +127,26 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
 
       <StylePicker selected={selectedStyle} onSelect={setSelectedStyle} />
 
-      {/* Text area */}
-      <TextInput
-        style={[styles.textInput, { color: theme.textPrimary, borderColor: 'rgba(245,230,200,0.15)' }]}
-        placeholder={moodEntry?.prompt ?? 'What do you want to say?'}
-        placeholderTextColor={theme.textMuted}
-        multiline
-        maxLength={500}
+      {/* Card editor — write directly on the paper */}
+      <ComposeCard
+        cardStyle={selectedStyle}
         value={body}
         onChangeText={setBody}
-        textAlignVertical="top"
+        placeholder={moodEntry?.prompt ?? 'What do you want to say?'}
+        locationLabel={placeLabel}
+        maxLength={500}
       />
       <Text style={[styles.charCount, { color: theme.textMuted }]}>{body.length}/500</Text>
 
       {/* Location */}
       <View style={styles.locationRow}>
-        <Text style={[styles.locationPin, { color: theme.accent }]}>📍</Text>
+        <Text style={[styles.locationPin, { color: 'rgba(244,201,122,0.7)' }]}>📍</Text>
         {!location ? (
-          <Text style={[styles.locationTxt, { color: theme.textMuted }]}>Getting location…</Text>
+          <Text style={[styles.locationTxt, { color: 'rgba(244,201,122,0.5)' }]}>Getting location…</Text>
         ) : placeLabel ? (
-          <Text style={[styles.locationTxt, { color: theme.textMuted }]}>{placeLabel}</Text>
+          <Text style={[styles.locationTxt, { color: 'rgba(244,201,122,0.5)' }]}>{placeLabel}</Text>
         ) : (
-          <Text style={[styles.locationTxt, { color: theme.textMuted }]}>
+          <Text style={[styles.locationTxt, { color: 'rgba(244,201,122,0.5)' }]}>
             {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
           </Text>
         )}
@@ -179,7 +178,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     position: 'absolute',
     right: 12,
-    shadowColor: '#000',
+    shadowColor: '#1a0e00',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -213,13 +212,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   postBtnTxt: { color: '#2a1f0a', fontSize: 15, fontWeight: '600' },
-  textInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    fontSize: 15,
-    height: 96,
-    lineHeight: 22,
-    marginBottom: 4,
-    padding: 10,
-  },
 });
