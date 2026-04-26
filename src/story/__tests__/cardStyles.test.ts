@@ -82,3 +82,10 @@ test('style a fontSize is 18 and lineHeight is 34', () => {
   expect(def.fontSize).toBe(18);
   expect(def.lineHeight).toBe(34);
 });
+
+test('all styles have correct fontSize and lineHeight', () => {
+  expect(getCardStyle('b')).toMatchObject({ fontSize: 20, lineHeight: 32 });
+  expect(getCardStyle('c')).toMatchObject({ fontSize: 20, lineHeight: 32 });
+  expect(getCardStyle('d')).toMatchObject({ fontSize: 17, lineHeight: 34 });
+  expect(getCardStyle('e')).toMatchObject({ fontSize: 21, lineHeight: 32 });
+});

@@ -22,7 +22,7 @@ export interface CardStyleDef {
   leftMarginColor: string;
   pillFooter: boolean;                // Style B: pill around reply count
   sealFooter: boolean;                // Style C: wax-seal icon
-  showPostmark: boolean;
+  showPostmark: boolean;              // Warm styles (a,c,e): ink-stamp postmark overlay
   borderColor: string;                // 'transparent' = no border
   shadowColor: string;
 }
