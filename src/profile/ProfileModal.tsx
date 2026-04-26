@@ -24,8 +24,8 @@ export interface ProfileModalProps {
 
 export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileModalProps) {
   const theme = useTheme();
-  const { user, loading: userLoading } = useUser();
-  const { stories, loading: storiesLoading } = useMyStories();
+  const { user, loading: userLoading, error: userError } = useUser();
+  const { stories, loading: storiesLoading, error: storiesError } = useMyStories();
   const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
   const [seenCounts, setSeenCounts] = useState<Record<string, number>>({});
 
@@ -58,6 +58,8 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
 
       {userLoading ? (
         <ActivityIndicator color={theme.accent} style={styles.centred} />
+      ) : userError ? (
+        <Text style={[styles.errorTxt, { color: '#e87c6a' }]}>could not load profile</Text>
       ) : (
         <>
           {/* Handle section */}
@@ -68,17 +70,19 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
               </Text>
               <Text style={[styles.lockIcon, { color: theme.textMuted }]}>{'  🔒'}</Text>
             </View>
-          ) : (
+          ) : user !== null ? (
             <HandleClaim
-              userId={user?.id ?? ''}
+              userId={user.id}
               onClaimed={(h) => setClaimedHandle(h)}
             />
-          )}
+          ) : null}
 
           <View style={[styles.divider, { backgroundColor: 'rgba(245,230,200,0.08)' }]} />
 
           {/* Sulat feed */}
-          {storiesLoading ? (
+          {storiesError ? (
+            <Text style={[styles.emptyTxt, { color: '#e87c6a' }]}>could not load sulats</Text>
+          ) : storiesLoading ? (
             <ActivityIndicator color={theme.accent} style={styles.centred} />
           ) : stories.length === 0 ? (
             <Text style={[styles.emptyTxt, { color: theme.textMuted }]}>
@@ -122,6 +126,7 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
   },
   centred: { marginVertical: 20 },
+  errorTxt: { fontSize: 13, paddingVertical: 16, textAlign: 'center' },
   closeHitbox: { marginLeft: 'auto', padding: 4 },
   closeTxt: { fontSize: 14 },
   divider: { height: 1, marginBottom: 10, marginTop: 10 },
