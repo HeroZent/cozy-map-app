@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
@@ -36,6 +36,19 @@ export function StoryView({ story }: StoryViewProps) {
           ✦ This is now a memory
         </Text>
       )}
+
+      {story.has_crisis_note && (
+        <View style={styles.crisisNote}>
+          <Text style={[styles.crisisNoteText, { color: theme.textMuted }]}>
+            💙 If you're going through something heavy, support is available.
+          </Text>
+          <Pressable onPress={() => Linking.openURL('tel:09175584673')}>
+            <Text style={[styles.crisisNoteLink, { color: theme.accent }]}>
+              Hopeline PH · 0917-558-4673
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -50,4 +63,19 @@ const styles = StyleSheet.create({
   memoryLabel: { fontSize: 13, fontStyle: 'italic', marginTop: 32 },
   meta: { fontSize: 12 },
   mood: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
+  crisisNote: {
+    borderTopColor: 'rgba(244,201,122,0.08)',
+    borderTopWidth: 1,
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  crisisNoteText: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  crisisNoteLink: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });

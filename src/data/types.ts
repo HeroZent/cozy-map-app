@@ -22,6 +22,7 @@ export interface Story {
   language: string;
   status: StoryStatus;
   is_memory: boolean;
+  has_crisis_note: boolean;
   created_at: string;
   reaction_count: number;
   reaction_counts: Partial<Record<ReactionEmoji, number>>;
