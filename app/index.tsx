@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect } from 'expo-router';
