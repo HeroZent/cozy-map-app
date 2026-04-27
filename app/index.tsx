@@ -22,7 +22,12 @@ const LazyMapView = React.lazy(() => import('@/map/LazyMapView'));
 const NAV_HEIGHT = 76;
 
 function MapSkeleton() {
-  return <View style={[styles.fill, { backgroundColor: '#0a0e22' }]} />;
+  return (
+    <View style={styles.skeleton}>
+      <SulatLogo size={48} />
+      <Text style={styles.skeletonHint}>finding your place on the map…</Text>
+    </View>
+  );
 }
 
 export default function Home() {
@@ -183,6 +188,18 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  skeleton: {
+    flex: 1,
+    backgroundColor: '#0a0e22',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  skeletonHint: {
+    color: 'rgba(244,201,122,0.35)',
+    fontSize: 13,
+    letterSpacing: 0.3,
+  },
   bottomBar: {
     alignItems: 'center',
     borderTopColor: 'rgba(244,201,122,0.08)',
