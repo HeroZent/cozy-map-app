@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendPushNotification } from '../_shared/push.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -96,6 +97,13 @@ serve(async (req) => {
     if (notifErr) {
       console.error('[react-story] notification insert error:', notifErr.message);
     }
+
+    await sendPushNotification(
+      serviceSupa,
+      notifStoryRow.author_id,
+      'New reaction on your sulat',
+      `Someone reacted with ${payload.emoji}`,
+    );
   }
   // intentionally non-blocking — reaction is already live
 
