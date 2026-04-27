@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { View, Text, Pressable, Switch, StyleSheet } from 'react-native';
+import { Linking, View, Text, Pressable, Switch, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import { usePushSubscription } from '@/push/usePushSubscription';
@@ -55,6 +55,16 @@ export function SettingsSheet({ onClose, heatmapOn, onHeatmapToggle, bottomOffse
         sulat is a cozy anonymous map for leaving little notes at the places that matter to you. No usernames, no followers — just words and a pin.
       </Text>
 
+      <View style={styles.legalRow}>
+        <Pressable onPress={() => Linking.openURL('/privacy')} accessibilityRole="link">
+          <Text style={[styles.legalLink, { color: theme.textMuted }]}>Privacy Policy</Text>
+        </Pressable>
+        <Text style={[styles.legalSep, { color: 'rgba(245,230,200,0.2)' }]}>·</Text>
+        <Pressable onPress={() => Linking.openURL('/terms')} accessibilityRole="link">
+          <Text style={[styles.legalLink, { color: theme.textMuted }]}>Terms of Service</Text>
+        </Pressable>
+      </View>
+
       <Text style={[styles.credit, { color: 'rgba(245,230,200,0.3)' }]}>
         Made with warmth 🕯️
       </Text>
@@ -103,6 +113,9 @@ const styles = StyleSheet.create({
   closeHitbox: { marginLeft: 'auto', padding: 4 },
   closeTxt: { fontSize: 14 },
   credit: { fontSize: 11, textAlign: 'center' },
+  legalLink: { fontSize: 11 },
+  legalRow: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginBottom: 12 },
+  legalSep: { fontSize: 11 },
   divider: { height: 1, marginBottom: 14, marginTop: 4 },
   header: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
   headerTitle: { fontSize: 17, fontWeight: '500' },
