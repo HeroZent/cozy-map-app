@@ -103,6 +103,30 @@ serve(async (req) => {
   }
   // intentionally non-blocking — reply is already live
 
+  // ── Reply notification ────────────────────────────────────────────────────
+  // Reuses the serviceSupa client created above for the audit log.
+  // Fire-and-forget — a failed notification never blocks the reply response.
+  const { data: notifStoryRow, error: notifStoryErr } = await serviceSupa
+    .from('stories')
+    .select('author_id')
+    .eq('id', payload.story_id)
+    .single();
+
+  if (notifStoryErr) {
+    console.error('[post-reply] notification story lookup error:', notifStoryErr.message);
+  } else if (notifStoryRow && notifStoryRow.author_id !== authUser.user.id) {
+    const { error: notifErr } = await serviceSupa.from('notifications').insert({
+      user_id: notifStoryRow.author_id,
+      type: 'new_reply',
+      story_id: payload.story_id,
+      payload: {},
+    });
+    if (notifErr) {
+      console.error('[post-reply] notification insert error:', notifErr.message);
+    }
+  }
+  // intentionally non-blocking — reply is already live
+
   return new Response(JSON.stringify({ id: data.id }), {
     status: 201,
     headers: { ...cors, 'Content-Type': 'application/json' },
