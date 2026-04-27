@@ -104,14 +104,18 @@ serve(async (req) => {
     has_crisis_note: hasCrisisNote,
   }).select('id').single();
 
-  if (insert.error) return new Response(insert.error.message, { status: 400, headers: cors });
+  if (insert.error) {
+    console.error('[create-story] insert error:', insert.error.message);
+    return new Response('Failed to create story', { status: 500, headers: cors });
+  }
 
   // ── Audit log ─────────────────────────────────────────────────────────────
   const serviceSupa = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   );
-  await serviceSupa.from('moderation_events').insert({
+  // Write audit log — intentionally non-blocking: story is already live
+  const { error: auditError } = await serviceSupa.from('moderation_events').insert({
     target_type: 'story',
     target_id: insert.data.id,
     verdict: modResult.verdict,
@@ -119,6 +123,9 @@ serve(async (req) => {
     crisis_score: modResult.crisisScore,
     metadata: { crisis_hint: crisisHint },
   });
+  if (auditError) {
+    console.error('[moderation_events] audit write failed:', auditError.message);
+  }
 
   return new Response(JSON.stringify({ id: insert.data.id }), {
     status: 201,
