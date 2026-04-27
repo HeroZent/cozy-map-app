@@ -70,6 +70,35 @@ serve(async (req) => {
 
   if (error) return new Response(error.message, { status: 400, headers: cors });
 
+  // ── Reaction notification ─────────────────────────────────────────────────
+  // Only fires on 'added' — the toggle-off branch returns early above.
+  // Fire-and-forget — a failed notification never blocks the reaction response.
+  const serviceSupa = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  );
+
+  const { data: notifStoryRow, error: notifStoryErr } = await serviceSupa
+    .from('stories')
+    .select('author_id')
+    .eq('id', payload.story_id)
+    .maybeSingle();
+
+  if (notifStoryErr) {
+    console.error('[react-story] notification story lookup error:', notifStoryErr.message);
+  } else if (notifStoryRow && notifStoryRow.author_id !== userId) {
+    const { error: notifErr } = await serviceSupa.from('notifications').insert({
+      user_id: notifStoryRow.author_id,
+      type: 'new_reaction',
+      story_id: payload.story_id,
+      payload: { emoji: payload.emoji },
+    });
+    if (notifErr) {
+      console.error('[react-story] notification insert error:', notifErr.message);
+    }
+  }
+  // intentionally non-blocking — reaction is already live
+
   return new Response(JSON.stringify({ action: 'added' }), {
     status: 201,
     headers: { ...cors, 'Content-Type': 'application/json' },
