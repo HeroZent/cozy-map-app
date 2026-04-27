@@ -110,7 +110,7 @@ serve(async (req) => {
     .from('stories')
     .select('author_id')
     .eq('id', payload.story_id)
-    .single();
+    .maybeSingle();
 
   if (notifStoryErr) {
     console.error('[post-reply] notification story lookup error:', notifStoryErr.message);
