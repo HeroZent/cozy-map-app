@@ -98,4 +98,15 @@ describe('MySulatRow', () => {
     fireEvent.press(getByTestId('delete-sulat-button'));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it('does not call onNavigate when the X button is pressed', () => {
+    const onNavigate = jest.fn();
+    const onDelete = jest.fn();
+    const { getByTestId } = render(
+      <MySulatRow story={baseStory} isUnread={false} onNavigate={onNavigate} onDelete={onDelete} />,
+    );
+    fireEvent.press(getByTestId('delete-sulat-button'));
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
 });

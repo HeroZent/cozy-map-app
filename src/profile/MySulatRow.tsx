@@ -45,7 +45,8 @@ export function MySulatRow({ story, isUnread, onNavigate, onDelete }: MySulatRow
         <Pressable
           onPress={onDelete}
           style={styles.deleteBtn}
-          hitSlop={4}
+          hitSlop={8}
+          accessibilityRole="button"
           accessibilityLabel="Delete sulat"
           testID="delete-sulat-button"
         >
@@ -59,7 +60,7 @@ export function MySulatRow({ story, isUnread, onNavigate, onDelete }: MySulatRow
 const styles = StyleSheet.create({
   badge: { fontSize: 11, fontWeight: '600', marginLeft: 8 },
   body: { fontSize: 14, lineHeight: 20 },
-  deleteBtn: { padding: 8, position: 'absolute', right: 0, top: 4 },
+  deleteBtn: { padding: 12, position: 'absolute', right: 0, top: 0 },
   deleteTxt: { fontSize: 11 },
   main: { flex: 1, paddingRight: 24 },
   memoryBadge: { fontSize: 11, fontStyle: 'italic', marginLeft: 8 },
