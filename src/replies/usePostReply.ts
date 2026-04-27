@@ -7,6 +7,9 @@ export interface PostReplyResult {
 
 export function usePostReply() {
   return async function postReply(storyId: string, body: string): Promise<PostReplyResult> {
+    // post-reply edge function implements Layer 2a (OpenAI) only.
+    // Layer 2b (Anthropic Haiku) is intentionally not wired for replies —
+    // replies are shorter and crisis support is handled client-side via HotlineOverlay.
     const { data, error } = await supabase.functions.invoke('post-reply', {
       body: { story_id: storyId, body },
     });

@@ -17,13 +17,13 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHotline, setShowHotline] = useState(false);
-  const [pendingBody, setPendingBody] = useState('');
 
   const isEmpty = draft.trim().length === 0;
 
   const submitBody = async (body: string) => {
     setSubmitting(true);
     setError(null);
+    setShowHotline(false);   // <-- Fix I1: clear overlay if somehow still visible
     try {
       await onSubmit(body);
       setDraft('');
@@ -43,7 +43,6 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
     const trimmed = draft.trim();
     // Layer 1: crisis tripwire — show overlay, hold submission
     if (checkCrisis(trimmed)) {
-      setPendingBody(trimmed);
       setShowHotline(true);
       return;
     }
@@ -52,15 +51,6 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
 
   return (
     <View style={styles.wrap}>
-      <HotlineOverlay
-        visible={showHotline}
-        onGetHelp={() => setShowHotline(false)}
-        onContinue={() => {
-          setShowHotline(false);
-          // Replies always use Layer 2a — no crisis_hint needed in edge function
-          submitBody(pendingBody);
-        }}
-      />
       {error ? (
         <Text style={[styles.errorTxt, { color: theme.accent }]}>{error}</Text>
       ) : null}
@@ -77,7 +67,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
             setDraft(t.slice(0, MAX_CHARS));
             setError(null);
           }}
-          editable={!submitting}
+          editable={!submitting && !showHotline}
           multiline
         />
         <Pressable
@@ -92,6 +82,15 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
           )}
         </Pressable>
       </View>
+      <HotlineOverlay
+        visible={showHotline}
+        onGetHelp={() => setShowHotline(false)}
+        onContinue={() => {
+          setShowHotline(false);
+          // Replies always use Layer 2a — no crisis_hint for edge function
+          submitBody(draft.trim());
+        }}
+      />
     </View>
   );
 }
