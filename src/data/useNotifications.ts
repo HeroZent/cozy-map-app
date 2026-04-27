@@ -32,6 +32,8 @@ export function useNotifications(): UseNotificationsResult {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
+  // Captured so markRead can add a user filter as defense-in-depth (RLS is the primary guard)
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -39,6 +41,7 @@ export function useNotifications(): UseNotificationsResult {
     (async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id ?? null;
+      userIdRef.current = userId;
 
       if (!userId) {
         if (!cancelled) setLoading(false);
@@ -69,12 +72,16 @@ export function useNotifications(): UseNotificationsResult {
 
   const markRead = async (ids: string[]) => {
     if (ids.length === 0) return;
+    const userId = userIdRef.current;
+    if (!userId) return;
     // Optimistic: update local state immediately
     setNotifications((prev) => prev.filter((n) => !ids.includes(n.id)));
-    // Patch DB in background — fire and forget
+    // Patch DB in background — fire and forget.
+    // .eq('user_id', userId) is defense-in-depth; RLS is the primary guard.
     supabase
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
+      .eq('user_id', userId)
       .in('id', ids)
       .then(({ error }) => {
         if (error) {

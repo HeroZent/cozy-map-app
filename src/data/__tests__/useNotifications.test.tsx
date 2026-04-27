@@ -1,4 +1,4 @@
-// src/data/__tests__/useNotifications.test.ts
+// src/data/__tests__/useNotifications.test.tsx
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { Text, Pressable } from 'react-native';
@@ -22,6 +22,9 @@ jest.mock('@/data/supabase', () => ({
         is: () => Promise.resolve({ data: mockNotifications, error: mockFetchError }),
       }),
       update: () => ({
+        eq: () => ({
+          in: () => Promise.resolve({ error: null }),
+        }),
         in: () => Promise.resolve({ error: null }),
       }),
     }),

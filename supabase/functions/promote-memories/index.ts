@@ -17,7 +17,10 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: cors });
 
-  // Verify caller is the service role (pg_cron sends the service role key)
+  // Verify the caller is pg_cron (server-side only — this function is never called from browsers).
+  // pg_cron sends the service role key as the Bearer token (see schedule migration).
+  // Raw string comparison is acceptable here: this is a server-to-server call on Supabase's
+  // internal network, not exposed to timing attacks from the internet.
   const authHeader = req.headers.get('Authorization');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
@@ -66,7 +69,11 @@ serve(async (req) => {
       continue;
     }
 
-    // Insert notification — non-fatal if this fails (story is already promoted)
+    // Insert notification — non-fatal if this fails.
+    // The story is already promoted at this point. A missed notification is silent data loss,
+    // but is acceptable: the author will still see the ✦ memory badge on their story card.
+    // Using a DB transaction (RPC) would be more robust but adds schema complexity.
+    // Trade-off documented intentionally.
     const { error: notifError } = await supa
       .from('notifications')
       .insert({
