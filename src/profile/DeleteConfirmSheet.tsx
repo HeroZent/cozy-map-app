@@ -2,6 +2,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 
+const DANGER_COLOR = '#c0392b';
+
 export interface DeleteConfirmSheetProps {
   visible: boolean;
   deleting: boolean;
@@ -9,6 +11,12 @@ export interface DeleteConfirmSheetProps {
   onCancel: () => void;
 }
 
+/**
+ * Full-screen overlay confirmation dialog for deleting a sulat.
+ * Must be rendered as a direct child of the AnimatedSheet root view,
+ * NOT nested inside a ScrollView or any overflow:hidden ancestor —
+ * the absolute backdrop will be clipped otherwise.
+ */
 export function DeleteConfirmSheet({ visible, deleting, onConfirm, onCancel }: DeleteConfirmSheetProps) {
   const theme = useTheme();
 
@@ -70,7 +78,7 @@ const styles = StyleSheet.create({
     width: '80%',
   },
   deleteTxt: {
-    color: '#c0392b',
+    color: DANGER_COLOR,
     fontSize: 14,
     fontWeight: '600',
     paddingHorizontal: 4,

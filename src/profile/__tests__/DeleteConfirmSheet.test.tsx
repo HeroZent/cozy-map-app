@@ -102,7 +102,8 @@ describe('DeleteConfirmSheet', () => {
     );
     expect(getByText('Deleting…')).toBeTruthy();
     expect(queryByText('Delete')).toBeNull();
-    // Buttons disabled — pressing them does nothing
+    // onPress is undefined when deleting — fireEvent fires but nothing executes
+    // (RNTL's fireEvent.press does not respect the disabled prop)
     fireEvent.press(getByText('Cancel'));
     expect(onCancel).not.toHaveBeenCalled();
     fireEvent.press(getByText('Deleting…'));
