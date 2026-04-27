@@ -1,14 +1,7 @@
 // src/moderation/HotlineOverlay.tsx
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
-
-const PH_HOTLINE = {
-  name: 'Hopeline PH',
-  number: '0917-558-4673',
-  tel: 'tel:09175584673',
-};
-
-const GLOBAL_FALLBACK_URL = 'https://www.befrienders.org';
+import { PH_HOTLINE, GLOBAL_FALLBACK_URL } from './hotlines';
 
 export interface HotlineOverlayProps {
   visible: boolean;

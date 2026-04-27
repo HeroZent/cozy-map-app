@@ -1,5 +1,5 @@
 // src/replies/ReplyInput.tsx
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { checkCrisis } from '@/moderation/crisisTripwire';
@@ -17,6 +17,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHotline, setShowHotline] = useState(false);
+  const pendingBodyRef = useRef('');
 
   const isEmpty = draft.trim().length === 0;
 
@@ -43,6 +44,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
     const trimmed = draft.trim();
     // Layer 1: crisis tripwire — show overlay, hold submission
     if (checkCrisis(trimmed)) {
+      pendingBodyRef.current = trimmed;
       setShowHotline(true);
       return;
     }
@@ -88,7 +90,7 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
         onContinue={() => {
           setShowHotline(false);
           // Replies always use Layer 2a — no crisis_hint for edge function
-          submitBody(draft.trim());
+          submitBody(pendingBodyRef.current);
         }}
       />
     </View>

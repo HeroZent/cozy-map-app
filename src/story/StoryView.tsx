@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
 import type { Story } from '@/data/types';
+import { PH_HOTLINE } from '@/moderation/hotlines';
 
 export interface StoryViewProps {
   story: Story;
@@ -42,9 +43,9 @@ export function StoryView({ story }: StoryViewProps) {
           <Text style={[styles.crisisNoteText, { color: theme.textMuted }]}>
             💙 If you're going through something heavy, support is available.
           </Text>
-          <Pressable onPress={() => Linking.openURL('tel:09175584673').catch(() => {})}>
+          <Pressable onPress={() => Linking.openURL(PH_HOTLINE.tel).catch(() => {})}>
             <Text style={[styles.crisisNoteLink, { color: theme.accent }]}>
-              Hopeline PH · 0917-558-4673
+              {PH_HOTLINE.name} · {PH_HOTLINE.number}
             </Text>
           </Pressable>
         </View>

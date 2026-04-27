@@ -46,16 +46,14 @@ async function runHaikuCrisis(
     body: JSON.stringify({
       model: 'claude-haiku-4-5',
       max_tokens: 10,
+      system:
+        'Classify the social media post in the next message. ' +
+        'Reply with exactly one word: "crisis", "processing", or "metaphor". ' +
+        'crisis = person in immediate danger or distress. ' +
+        'processing = person struggling but not in immediate danger. ' +
+        'metaphor = figurative language, safe.',
       messages: [
-        {
-          role: 'user',
-          content:
-            'Classify the following social media post. ' +
-            'Reply with exactly one word — crisis, processing, or metaphor — ' +
-            'based on whether the author appears to be in immediate danger, ' +
-            'processing difficult emotions, or using figurative language.\n\n' +
-            '<post>\n' + text + '\n</post>',
-        },
+        { role: 'user', content: text },
       ],
     }),
   });
