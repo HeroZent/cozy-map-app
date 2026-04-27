@@ -51,7 +51,7 @@ function inBbox(s: StoryRow, bbox: Bbox): boolean {
   );
 }
 
-const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, created_at, lat, lng, reactions(emoji, user_id), replies(count)';
+const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, has_crisis_note, created_at, lat, lng, reactions(emoji, user_id), replies(count)';
 
 export function useStories(bbox: Bbox, refreshKey = 0): UseStoriesResult {
   const [stories, setStories] = useState<Story[]>([]);

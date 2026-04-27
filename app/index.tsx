@@ -42,6 +42,16 @@ export default function Home() {
   const { stories } = useStories({ minLng: bbox[0], minLat: bbox[1], maxLng: bbox[2], maxLat: bbox[3] }, refreshKey);
   const [heatmapOn, setHeatmapOn] = useState(true);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+
+  // Keep the open story card in sync with fresh data from every refetch.
+  // Without this, reactions and reply counts show stale values until the
+  // user closes and reopens the sheet.
+  useEffect(() => {
+    if (!selectedStory) return;
+    const updated = stories.find((s) => s.id === selectedStory.id);
+    if (updated) setSelectedStory(updated);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stories]); // intentionally omit selectedStory — only run when stories changes
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeCoords, setComposeCoords] = useState<{ lat: number; lng: number } | undefined>();
   const [lanternOpen, setLanternOpen] = useState(false);

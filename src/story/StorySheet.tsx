@@ -30,10 +30,16 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
   const [threadOpen, setThreadOpen] = useState(false);
   const [replyCount, setReplyCount] = useState(story.reply_count);
 
+  // Close thread and reset count only when a different story is selected.
+  // Do NOT include story.reply_count here — updating it would collapse
+  // an open reply thread every time the parent refreshes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setThreadOpen(false); setReplyCount(story.reply_count); }, [story.id]);
+
+  // Sync reply count from fresh story data without disturbing an open thread.
   useEffect(() => {
-    setThreadOpen(false);
-    setReplyCount(story.reply_count);
-  }, [story.id, story.reply_count]);
+    if (!threadOpen) setReplyCount(story.reply_count);
+  }, [story.reply_count, threadOpen]);
 
   useEffect(() => {
     if (threadOpen) {
