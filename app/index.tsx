@@ -63,6 +63,16 @@ export default function Home() {
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
   const { notifications, memoryCount, activityCount, activityNotificationIds, markRead } = useNotifications();
+
+  // Register service worker for web push (web only — no-op on native)
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.error('[sw] registration failed:', err);
+      });
+    }
+  }, []);
+
   const replyCount = useMemo(
     () => notifications.filter((n) => n.type === 'new_reply').length,
     [notifications],
