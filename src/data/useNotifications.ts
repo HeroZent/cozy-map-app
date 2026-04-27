@@ -1,5 +1,5 @@
 // src/data/useNotifications.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/data/supabase';
 
 export interface Notification {
@@ -17,13 +17,24 @@ export interface UseNotificationsResult {
   loading: boolean;
 }
 
+// Raw shape returned from the DB — cast target before mapping to Notification
+interface NotificationRow {
+  id: string;
+  type: string;
+  story_id: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
 const SELECT = 'id, type, story_id, payload, created_at';
 
 export function useNotifications(): UseNotificationsResult {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     let cancelled = false;
     (async () => {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -46,11 +57,14 @@ export function useNotifications(): UseNotificationsResult {
       }
 
       if (!cancelled) {
-        setNotifications((data ?? []) as Notification[]);
+        setNotifications((data ?? []) as unknown as NotificationRow[] as Notification[]);
         setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      mountedRef.current = false;
+    };
   }, []);
 
   const markRead = async (ids: string[]) => {
@@ -71,7 +85,10 @@ export function useNotifications(): UseNotificationsResult {
             .select(SELECT)
             .is('read_at', null)
             .then(({ data }) => {
-              setNotifications((data ?? []) as Notification[]);
+              // Guard against state update on unmounted component
+              if (mountedRef.current) {
+                setNotifications((data ?? []) as unknown as NotificationRow[] as Notification[]);
+              }
             });
         }
       });
