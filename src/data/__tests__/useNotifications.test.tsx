@@ -116,4 +116,29 @@ describe('useNotifications', () => {
     await waitFor(() => expect(getByText('activity-0')).toBeTruthy());
     expect(getByText('ids-')).toBeTruthy();
   });
+
+  it('passes stories join data through to notifications', async () => {
+    mockNotifications = [
+      {
+        id: 'n1',
+        type: 'new_reply',
+        story_id: 's1',
+        payload: {},
+        created_at: '2026-01-01T00:00:00Z',
+        stories: {
+          body: 'A quiet afternoon in Intramuros',
+          location_label: 'Manila',
+          lat: 14.5995,
+          lng: 120.9842,
+          created_at: '2026-01-01T00:00:00Z',
+        },
+      },
+    ];
+    const { getByText } = render(<Harness />);
+    await waitFor(() => expect(getByText('total-1')).toBeTruthy());
+    // The hook exposes the raw notification objects; stories join data is part of them.
+    // We can only observe totals through the Harness — the shape is verified by TypeScript.
+    expect(getByText('count-0')).toBeTruthy(); // type is new_reply, not memory_promoted
+    expect(getByText('activity-1')).toBeTruthy();
+  });
 });

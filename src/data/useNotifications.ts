@@ -8,6 +8,14 @@ export interface Notification {
   story_id: string | null;
   payload: Record<string, unknown>;
   created_at: string;
+  // Joined from stories — null when the story has been deleted.
+  stories: {
+    body: string;
+    location_label: string | null;
+    lat: number;
+    lng: number;
+    created_at: string;
+  } | null;
 }
 
 export interface UseNotificationsResult {
@@ -26,9 +34,19 @@ interface NotificationRow {
   story_id: string | null;
   payload: Record<string, unknown>;
   created_at: string;
+  stories: {
+    body: string;
+    location_label: string | null;
+    lat: number;
+    lng: number;
+    created_at: string;
+  } | null;
 }
 
-const SELECT = 'id, type, story_id, payload, created_at';
+const SELECT = `
+  id, type, story_id, payload, created_at,
+  stories ( body, location_label, lat, lng, created_at )
+`;
 
 export function useNotifications(): UseNotificationsResult {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -94,7 +112,6 @@ export function useNotifications(): UseNotificationsResult {
             .select(SELECT)
             .is('read_at', null)
             .then(({ data }) => {
-              // Guard against state update on unmounted component
               if (mountedRef.current) {
                 setNotifications((data ?? []) as unknown as NotificationRow[] as Notification[]);
               }
