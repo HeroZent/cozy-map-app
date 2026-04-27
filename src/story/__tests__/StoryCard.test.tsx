@@ -42,7 +42,7 @@ test('applies Kalam font for style a', () => {
   const style = Array.isArray(el.props.style)
     ? Object.assign({}, ...el.props.style.flat(Infinity).filter(Boolean))
     : el.props.style;
-  expect(style.fontFamily).toBe('Kalam_400Regular');
+  expect(style.fontFamily).toBe('Kalam');
 });
 
 test('applies Caveat font for style b', () => {
@@ -51,7 +51,7 @@ test('applies Caveat font for style b', () => {
   const style = Array.isArray(el.props.style)
     ? Object.assign({}, ...el.props.style.flat(Infinity).filter(Boolean))
     : el.props.style;
-  expect(style.fontFamily).toBe('Caveat_400Regular');
+  expect(style.fontFamily).toBe('Caveat');
 });
 
 test('falls back to style a for unknown cardStyle', () => {
