@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect } from 'expo-router';
@@ -63,8 +63,14 @@ export default function Home() {
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
   const { notifications, memoryCount, activityCount, activityNotificationIds, markRead } = useNotifications();
-  const replyCount = notifications.filter((n) => n.type === 'new_reply').length;
-  const reactionCount = notifications.filter((n) => n.type === 'new_reaction').length;
+  const replyCount = useMemo(
+    () => notifications.filter((n) => n.type === 'new_reply').length,
+    [notifications],
+  );
+  const reactionCount = useMemo(
+    () => notifications.filter((n) => n.type === 'new_reaction').length,
+    [notifications],
+  );
 
   const closeAllSheets = () => {
     setSelectedStory(null);
@@ -128,7 +134,7 @@ export default function Home() {
           >
             <Text style={[styles.profileIcon, { color: theme.accent }]}>◉</Text>
             {activityCount > 0 && (
-              <Text style={[styles.profileBadge, { color: theme.accent }]}>●</Text>
+              <View style={[styles.profileBadge, { backgroundColor: theme.accent }]} />
             )}
           </Pressable>
           <Pressable
@@ -292,14 +298,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: 36,
     justifyContent: 'center',
+    overflow: 'visible',
     width: 36,
   },
   profileIcon: { fontSize: 16 },
   profileBadge: {
-    fontSize: 8,
+    borderRadius: 4,
+    height: 8,
     position: 'absolute',
     right: -2,
     top: -2,
+    width: 8,
   },
   settingsBtn: {
     alignItems: 'center',
