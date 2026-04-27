@@ -19,7 +19,11 @@ jest.mock('@/data/supabase', () => ({
     },
     from: () => ({
       select: () => ({
-        is: () => Promise.resolve({ data: mockNotifications, error: mockFetchError }),
+        is: () => ({
+          order: () => ({
+            limit: () => Promise.resolve({ data: mockNotifications, error: mockFetchError }),
+          }),
+        }),
       }),
       update: () => ({
         eq: () => ({

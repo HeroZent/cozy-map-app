@@ -78,7 +78,9 @@ export function useNotifications(): UseNotificationsResult {
       const { data, error } = await supabase
         .from('notifications')
         .select(SELECT)
-        .is('read_at', null);
+        .is('read_at', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       if (error) {
         console.error('[useNotifications] fetch error:', error.message);
@@ -118,6 +120,8 @@ export function useNotifications(): UseNotificationsResult {
             .from('notifications')
             .select(SELECT)
             .is('read_at', null)
+            .order('created_at', { ascending: false })
+            .limit(20)
             .then(({ data }) => {
               if (mountedRef.current) {
                 setNotifications(mapRows((data ?? []) as NotificationRow[]));
