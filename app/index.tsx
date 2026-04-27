@@ -1,8 +1,7 @@
-import { useCallback, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useRef, useState } from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect } from 'expo-router';
-import { MapView } from '@/map/MapView';
 import { StoryPins } from '@/map/StoryPins';
 import { HeatmapLayer } from '@/map/HeatmapLayer';
 import { StorySheet } from '@/story/StorySheet';
@@ -15,10 +14,16 @@ import { useViewport } from '@/map/useViewport';
 import { useTheme } from '@/theme/ThemeContext';
 import { SulatLogo } from '@/brand/SulatLogo';
 import { MapVignette, MapWarmTint } from '@/map/MapVignette';
-import type { FlyTarget } from '@/map/MapView';
+import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
 
+const LazyMapView = React.lazy(() => import('@/map/LazyMapView'));
+
 const NAV_HEIGHT = 76;
+
+function MapSkeleton() {
+  return <View style={[styles.fill, { backgroundColor: '#0a0e22' }]} />;
+}
 
 export default function Home() {
   const { viewport } = useViewport();
@@ -65,19 +70,21 @@ export default function Home() {
 
   return (
     <View style={styles.fill}>
-      {/* Map fills entire screen */}
-      <MapView
-        onDoubleClick={(loc) => openCompose({ lat: loc.lat, lng: loc.lng })}
-        flyTarget={flyTarget}
-      >
-        {heatmapOn && <HeatmapLayer stories={stories} />}
-        <StoryPins
-          stories={stories}
-          zoom={viewport.zoom}
-          bbox={bbox}
-          onSelect={(story) => { closeAllSheets(); setSelectedStory(story); }}
-        />
-      </MapView>
+      {/* Map fills entire screen — loaded lazily so the app shell renders first */}
+      <Suspense fallback={<MapSkeleton />}>
+        <LazyMapView
+          onDoubleClick={(loc) => openCompose({ lat: loc.lat, lng: loc.lng })}
+          flyTarget={flyTarget}
+        >
+          {heatmapOn && <HeatmapLayer stories={stories} />}
+          <StoryPins
+            stories={stories}
+            zoom={viewport.zoom}
+            bbox={bbox}
+            onSelect={(story) => { closeAllSheets(); setSelectedStory(story); }}
+          />
+        </LazyMapView>
+      </Suspense>
 
       <MapWarmTint />
       <MapVignette />
