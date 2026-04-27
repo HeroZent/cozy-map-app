@@ -7,9 +7,10 @@ export interface MySulatRowProps {
   story: MyStory;
   isUnread: boolean;
   onNavigate: () => void;
+  onDelete?: () => void;
 }
 
-export function MySulatRow({ story, isUnread, onNavigate }: MySulatRowProps) {
+export function MySulatRow({ story, isUnread, onNavigate, onDelete }: MySulatRowProps) {
   const theme = useTheme();
   const ageDays = Math.floor((Date.now() - new Date(story.created_at).getTime()) / 86400000);
   const timeLabel = ageDays === 0 ? 'today' : ageDays === 1 ? '1d ago' : `${ageDays}d ago`;
@@ -40,6 +41,17 @@ export function MySulatRow({ story, isUnread, onNavigate }: MySulatRowProps) {
           )}
         </View>
       </View>
+      {onDelete && (
+        <Pressable
+          onPress={onDelete}
+          style={styles.deleteBtn}
+          hitSlop={4}
+          accessibilityLabel="Delete sulat"
+          testID="delete-sulat-button"
+        >
+          <Text style={[styles.deleteTxt, { color: theme.textMuted }]}>✕</Text>
+        </Pressable>
+      )}
     </Pressable>
   );
 }
@@ -47,7 +59,9 @@ export function MySulatRow({ story, isUnread, onNavigate }: MySulatRowProps) {
 const styles = StyleSheet.create({
   badge: { fontSize: 11, fontWeight: '600', marginLeft: 8 },
   body: { fontSize: 14, lineHeight: 20 },
-  main: { flex: 1 },
+  deleteBtn: { padding: 8, position: 'absolute', right: 0, top: 4 },
+  deleteTxt: { fontSize: 11 },
+  main: { flex: 1, paddingRight: 24 },
   memoryBadge: { fontSize: 11, fontStyle: 'italic', marginLeft: 8 },
   meta: { alignItems: 'center', flexDirection: 'row', marginTop: 4 },
   metaTxt: { fontSize: 11 },
