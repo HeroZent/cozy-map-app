@@ -31,6 +31,33 @@ jest.mock('@/lib/reverseGeocode', () => ({
   reverseGeocode: jest.fn().mockResolvedValue(null),
 }));
 
+jest.mock('@/moderation/crisisTripwire', () => ({
+  checkCrisis: jest.fn(),
+}));
+
+jest.mock('@/moderation/HotlineOverlay', () => ({
+  HotlineOverlay: ({
+    visible,
+    onContinue,
+  }: {
+    visible: boolean;
+    onGetHelp: () => void;
+    onContinue: () => void;
+  }) => {
+    const React = require('react');
+    const { Text, Pressable } = require('react-native');
+    if (!visible) return null;
+    return React.createElement(
+      React.Fragment,
+      null,
+      React.createElement(Text, null, 'HOTLINE_VISIBLE'),
+      React.createElement(Pressable, { onPress: onContinue, testID: 'hotline-continue' },
+        React.createElement(Text, null, 'Continue posting'),
+      ),
+    );
+  },
+}));
+
 test('renders style picker swatches', () => {
   const { getByTestId } = render(<ComposeSheet onClose={jest.fn()} />);
   expect(getByTestId('style-swatch-a')).toBeTruthy();
@@ -47,5 +74,45 @@ test('initialises style picker from user preferred_card_style', async () => {
       (s: Record<string, unknown>) => typeof s === 'object' && s !== null && s.borderColor === '#f4c97a',
     );
     expect(hasGoldBorder).toBe(true);
+  });
+});
+
+test('shows hotline overlay when crisis phrase detected', async () => {
+  const { checkCrisis } = require('@/moderation/crisisTripwire');
+  (checkCrisis as jest.Mock).mockReturnValue(true);
+
+  const { getByText, UNSAFE_getAllByType } = render(
+    <ComposeSheet onClose={jest.fn()} coords={{ lat: 14.6, lng: 120.9 }} />,
+  );
+
+  // Fill body via the TextInput inside ComposeCard
+  const { TextInput } = require('react-native');
+  const inputs = UNSAFE_getAllByType(TextInput);
+  fireEvent.changeText(inputs[0], 'I want to kill myself');
+
+  // Press Post sulat
+  fireEvent.press(getByText('Post sulat'));
+
+  await waitFor(() => {
+    expect(getByText('HOTLINE_VISIBLE')).toBeTruthy();
+  });
+});
+
+test('does not show hotline overlay when no crisis phrase', async () => {
+  const { checkCrisis } = require('@/moderation/crisisTripwire');
+  (checkCrisis as jest.Mock).mockReturnValue(false);
+
+  const { queryByText, getByText, UNSAFE_getAllByType } = render(
+    <ComposeSheet onClose={jest.fn()} coords={{ lat: 14.6, lng: 120.9 }} />,
+  );
+
+  const { TextInput } = require('react-native');
+  const inputs = UNSAFE_getAllByType(TextInput);
+  fireEvent.changeText(inputs[0], 'feeling hopeful today');
+
+  fireEvent.press(getByText('Post sulat'));
+
+  await waitFor(() => {
+    expect(queryByText('HOTLINE_VISIBLE')).toBeNull();
   });
 });

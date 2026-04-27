@@ -14,6 +14,8 @@ import { useUser } from '@/data/useUser';
 import { StylePicker } from '@/story/StylePicker';
 import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
 import { ComposeCard } from './ComposeCard';
+import { checkCrisis } from '@/moderation/crisisTripwire';
+import { HotlineOverlay } from '@/moderation/HotlineOverlay';
 
 export interface ComposeSheetProps {
   /** Pre-filled from double-click. Undefined = use GPS. */
@@ -34,6 +36,7 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
   const [placeLabel, setPlaceLabel] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHotline, setShowHotline] = useState(false);
 
   const { user } = useUser();
   const [selectedStyle, setSelectedStyle] = useState<CardStyleId>(DEFAULT_CARD_STYLE);
@@ -67,8 +70,15 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
   const moodEntry = MOODS.find((m) => m.id === selectedMood);
   const canPost = !!location && body.trim().length > 0 && !posting;
 
-  const handlePost = async () => {
+  const handlePost = async (crisisHint = false) => {
     if (!location || !body.trim()) return;
+
+    // Layer 1: client-side crisis tripwire
+    if (!crisisHint && checkCrisis(body)) {
+      setShowHotline(true);
+      return;
+    }
+
     setPosting(true);
     setError(null);
     try {
@@ -79,6 +89,7 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
         pinMode: coords ? 'dropped' : 'gps',
         label: placeLabel ?? undefined,
         cardStyle: selectedStyle,
+        crisisHint,
       });
       onClose();
       onPosted?.();
@@ -169,6 +180,14 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
           ? <ActivityIndicator color="#2a1f0a" />
           : <Text style={styles.postBtnTxt}>Post sulat</Text>}
       </Pressable>
+      <HotlineOverlay
+        visible={showHotline}
+        onGetHelp={() => setShowHotline(false)}
+        onContinue={() => {
+          setShowHotline(false);
+          handlePost(true);
+        }}
+      />
     </AnimatedSheet>
   );
 }
