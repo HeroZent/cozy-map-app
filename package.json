@@ -15,11 +15,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@expo-google-fonts/caveat": "^0.4.2",
-    "@expo-google-fonts/dancing-script": "^0.4.2",
-    "@expo-google-fonts/kalam": "^0.4.1",
-    "@expo-google-fonts/patrick-hand": "^0.4.1",
-    "@expo-google-fonts/reenie-beanie": "^0.4.1",
     "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.104.1",
