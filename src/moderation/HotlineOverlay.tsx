@@ -17,19 +17,26 @@ export interface HotlineOverlayProps {
 }
 
 export function HotlineOverlay({ visible, onGetHelp, onContinue }: HotlineOverlayProps) {
+  // useTheme must be called before the early-return to satisfy rules-of-hooks.
   const theme = useTheme();
 
   if (!visible) return null;
 
   const handleGetHelp = () => {
     Linking.openURL(PH_HOTLINE.tel).catch(() => {
-      Linking.openURL(GLOBAL_FALLBACK_URL);
+      Linking.openURL(GLOBAL_FALLBACK_URL).catch(() => { /* best-effort; no further fallback */ });
     });
     onGetHelp();
   };
 
   return (
-    <Modal visible transparent animationType="fade" statusBarTranslucent>
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={() => { /* intentionally no-op: user must choose a button */ }}
+    >
       <View style={styles.backdrop}>
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
           <Text style={[styles.title, { color: theme.textPrimary }]}>
