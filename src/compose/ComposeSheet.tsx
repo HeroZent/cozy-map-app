@@ -173,7 +173,7 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
 
       {/* Post button */}
       <Pressable
-        onPress={handlePost}
+        onPress={() => handlePost()}
         disabled={!canPost}
         style={[styles.postBtn, { backgroundColor: canPost ? theme.accent : 'rgba(244,201,122,0.3)' }]}
       >
