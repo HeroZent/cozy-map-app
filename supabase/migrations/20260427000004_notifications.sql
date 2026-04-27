@@ -3,7 +3,7 @@
 create table public.notifications (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references public.users(id) on delete cascade,
-  type        text not null,   -- 'memory_promoted' | 'new_reply' | 'new_reaction'
+  type        text not null check (type in ('memory_promoted', 'new_reply', 'new_reaction')),
   story_id    uuid references public.stories(id) on delete cascade,
   payload     jsonb not null default '{}',
   read_at     timestamptz null,   -- null = unread
@@ -26,4 +26,5 @@ create policy "users read own notifications"
 -- No client INSERT or DELETE — service role only
 create policy "users update own notifications"
   on public.notifications for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
