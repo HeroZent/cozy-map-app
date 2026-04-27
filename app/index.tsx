@@ -19,6 +19,7 @@ import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
 import { MemoryBanner } from '@/notifications/MemoryBanner';
 import { ActivityBanner } from '@/notifications/ActivityBanner';
+import { NotificationSheet } from '@/notifications/NotificationSheet';
 
 const LazyMapView = React.lazy(() => import('@/map/LazyMapView'));
 
@@ -60,6 +61,7 @@ export default function Home() {
   const [lanternOpen, setLanternOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
   const { notifications, memoryCount, activityCount, activityNotificationIds, markRead } = useNotifications();
@@ -88,14 +90,17 @@ export default function Home() {
     setLanternOpen(false);
     setSettingsOpen(false);
     setProfileOpen(false);
+    setNotifSheetOpen(false);
   };
 
   const openProfile = () => {
     closeAllSheets();
-    if (activityNotificationIds.length > 0) {
-      markRead(activityNotificationIds);
-    }
     setProfileOpen(true);
+  };
+
+  const openNotifications = () => {
+    closeAllSheets();
+    setNotifSheetOpen(true);
   };
 
   const openCompose = (coords?: { lat: number; lng: number }) => {
@@ -148,6 +153,15 @@ export default function Home() {
             )}
           </Pressable>
           <Pressable
+            onPress={openNotifications}
+            style={[styles.notifBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
+          >
+            <Text style={[styles.notifIcon, { color: theme.accent }]}>🔔</Text>
+            {activityCount + memoryCount > 0 && (
+              <View style={[styles.notifBadge, { backgroundColor: theme.accent }]} />
+            )}
+          </Pressable>
+          <Pressable
             onPress={() => { closeAllSheets(); setSettingsOpen(true); }}
             style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
           >
@@ -192,6 +206,15 @@ export default function Home() {
       {profileOpen && (
         <ProfileModal
           onClose={() => setProfileOpen(false)}
+          onNavigate={(lat, lng) => setFlyTarget({ lat, lng, zoom: 14 })}
+          bottomOffset={NAV_HEIGHT + 10}
+        />
+      )}
+
+      {/* Notification sheet — floats above nav bar */}
+      {notifSheetOpen && (
+        <NotificationSheet
+          onClose={() => setNotifSheetOpen(false)}
           onNavigate={(lat, lng) => setFlyTarget({ lat, lng, zoom: 14 })}
           bottomOffset={NAV_HEIGHT + 10}
         />
@@ -320,6 +343,24 @@ const styles = StyleSheet.create({
     top: -2,
     width: 8,
   },
+  notifBtn: {
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 40,
+  },
+  notifBadge: {
+    borderRadius: 4,
+    height: 8,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: 8,
+  },
+  notifIcon: { fontSize: 16 },
   settingsBtn: {
     alignItems: 'center',
     borderRadius: 20,
