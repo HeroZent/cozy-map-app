@@ -1,6 +1,6 @@
 // src/story/StorySheet.tsx
 import { useState, useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
 import { ReactionBar } from '@/reactions/ReactionBar';
@@ -9,6 +9,7 @@ import { ReplyThread } from '@/replies/ReplyThread';
 import { markSeen } from '@/profile/useUnreadReplies';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import { StoryCard } from './StoryCard';
+import { PH_HOTLINE } from '@/moderation/hotlines';
 import type { Story } from '@/data/types';
 
 export interface StorySheetProps {
@@ -88,6 +89,20 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
             />
           )}
 
+          {/* Crisis note */}
+          {story.has_crisis_note && (
+            <View style={[styles.crisisNote, { borderTopColor: 'rgba(244,201,122,0.08)' }]}>
+              <Text style={[styles.crisisNoteText, { color: theme.textMuted }]}>
+                💙 Support is available if you need it.
+              </Text>
+              <Pressable onPress={() => Linking.openURL(PH_HOTLINE.tel).catch(() => {})}>
+                <Text style={[styles.crisisNoteLink, { color: theme.accent }]}>
+                  {PH_HOTLINE.name} · {PH_HOTLINE.number}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={[styles.footerTxt, { color: theme.textMuted }]}>
@@ -136,4 +151,12 @@ const styles = StyleSheet.create({
   memoryBadge: { fontSize: 11, fontStyle: 'italic', marginLeft: 10 },
   replyHitbox: { marginLeft: 'auto', padding: 4 },
   replyToggle: { fontSize: 12 },
+  crisisNote: {
+    borderTopWidth: 1,
+    marginTop: 8,
+    paddingTop: 8,
+    marginBottom: 2,
+  },
+  crisisNoteText: { fontSize: 11, lineHeight: 16, marginBottom: 2 },
+  crisisNoteLink: { fontSize: 11, fontWeight: '600' },
 });
