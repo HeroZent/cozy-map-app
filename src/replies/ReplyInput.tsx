@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
+import { checkCrisis } from '@/moderation/crisisTripwire';
+import { HotlineOverlay } from '@/moderation/HotlineOverlay';
 
 const MAX_CHARS = 300;
 
@@ -14,15 +16,16 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showHotline, setShowHotline] = useState(false);
+  const [pendingBody, setPendingBody] = useState('');
 
   const isEmpty = draft.trim().length === 0;
 
-  const handleSend = async () => {
-    if (isEmpty || submitting) return;
+  const submitBody = async (body: string) => {
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(draft.trim());
+      await onSubmit(body);
       setDraft('');
     } catch (e) {
       setError(
@@ -35,8 +38,29 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
     }
   };
 
+  const handleSend = () => {
+    if (isEmpty || submitting) return;
+    const trimmed = draft.trim();
+    // Layer 1: crisis tripwire — show overlay, hold submission
+    if (checkCrisis(trimmed)) {
+      setPendingBody(trimmed);
+      setShowHotline(true);
+      return;
+    }
+    submitBody(trimmed);
+  };
+
   return (
     <View style={styles.wrap}>
+      <HotlineOverlay
+        visible={showHotline}
+        onGetHelp={() => setShowHotline(false)}
+        onContinue={() => {
+          setShowHotline(false);
+          // Replies always use Layer 2a — no crisis_hint needed in edge function
+          submitBody(pendingBody);
+        }}
+      />
       {error ? (
         <Text style={[styles.errorTxt, { color: theme.accent }]}>{error}</Text>
       ) : null}
