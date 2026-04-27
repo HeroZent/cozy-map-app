@@ -1,12 +1,17 @@
 // supabase/functions/promote-memories/index.ts
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.104.1';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+interface StoryRow {
+  id: string;
+  author_id: string;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
@@ -32,7 +37,7 @@ serve(async (req) => {
     .select('id, author_id')
     .eq('is_memory', false)
     .eq('status', 'live')
-    .lt('created_at', cutoff);
+    .lt('created_at', cutoff) as unknown as { data: StoryRow[] | null; error: { message: string } | null };
 
   if (fetchError) {
     console.error('[promote-memories] fetch error:', fetchError.message);
