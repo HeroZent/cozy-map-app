@@ -16,7 +16,7 @@ jest.mock('expo-linear-gradient', () => {
 let mockDisplayHandle: string | null = null;
 let mockPreferredStyle = 'a';
 let mockStories: any[] = [];
-let mockDeleteStory = jest.fn();
+const mockDeleteStory = jest.fn();
 
 jest.mock('@/data/useUser', () => ({
   useUser: () => ({
@@ -79,7 +79,8 @@ jest.mock('@/profile/useUnreadReplies', () => ({
 beforeEach(() => {
   mockDisplayHandle = null;
   mockStories = [];
-  mockDeleteStory = jest.fn().mockResolvedValue(undefined);
+  mockDeleteStory.mockReset();
+  mockDeleteStory.mockResolvedValue(undefined);
 });
 
 test('style picker is hidden when user has no claimed handle', () => {
@@ -146,7 +147,7 @@ test('confirming delete calls deleteStory and dismisses the sheet', async () => 
 });
 
 test('when deleteStory throws, sheet dismisses and story stays', async () => {
-  mockDeleteStory = jest.fn().mockRejectedValue(new Error('db down'));
+  mockDeleteStory.mockRejectedValue(new Error('db down'));
   mockStories = [{ id: 's1', body: 'hello', location_label: null, created_at: new Date().toISOString(), lat: 14, lng: 121, is_memory: false, reaction_count: 0, reply_count: 0 }];
   const { getByTestId, getByText, queryByText } = render(
     <ProfileModal onClose={jest.fn()} onNavigate={jest.fn()} />,

@@ -151,7 +151,7 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
                     onClose();
                     onNavigate(story.lat, story.lng);
                   }}
-                  onDelete={() => setPendingDeleteId(story.id)}
+                  onDelete={pendingDeleteId ? undefined : () => setPendingDeleteId(story.id)}
                 />
               ))}
             </ScrollView>
