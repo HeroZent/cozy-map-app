@@ -16,6 +16,8 @@ import { SulatLogo } from '@/brand/SulatLogo';
 import { MapVignette, MapWarmTint } from '@/map/MapVignette';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
+import { useNotifications } from '@/data/useNotifications';
+import { MemoryBanner } from '@/notifications/MemoryBanner';
 
 const LazyMapView = React.lazy(() => import('@/map/LazyMapView'));
 
@@ -59,6 +61,7 @@ export default function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
+  const { notifications, memoryCount, markRead } = useNotifications();
 
   const closeAllSheets = () => {
     setSelectedStory(null);
@@ -173,6 +176,14 @@ export default function Home() {
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}
+
+      {/* Memory banner — floats above nav bar, disappears on tap */}
+      <MemoryBanner
+        notifications={notifications}
+        memoryCount={memoryCount}
+        markRead={markRead}
+        bottomOffset={NAV_HEIGHT}
+      />
 
       {/* Bottom nav bar */}
       <View style={[styles.bottomBar, { backgroundColor: theme.surface }]}>
