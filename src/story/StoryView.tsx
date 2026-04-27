@@ -42,7 +42,7 @@ export function StoryView({ story }: StoryViewProps) {
           <Text style={[styles.crisisNoteText, { color: theme.textMuted }]}>
             💙 If you're going through something heavy, support is available.
           </Text>
-          <Pressable onPress={() => Linking.openURL('tel:09175584673')}>
+          <Pressable onPress={() => Linking.openURL('tel:09175584673').catch(() => {})}>
             <Text style={[styles.crisisNoteLink, { color: theme.accent }]}>
               Hopeline PH · 0917-558-4673
             </Text>
