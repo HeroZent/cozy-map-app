@@ -64,7 +64,7 @@ export default function Home() {
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
-  const { notifications, memoryCount, activityCount, activityNotificationIds, markRead } = useNotifications();
+  const { notifications, memoryCount, activityCount, markRead } = useNotifications();
 
   // Register service worker for web push (web only — no-op on native)
   useEffect(() => {
@@ -148,6 +148,8 @@ export default function Home() {
             style={[styles.profileBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
           >
             <Text style={[styles.profileIcon, { color: theme.accent }]}>◉</Text>
+            {/* Badge stays here as a visual cue directing users to the bell — intentional duplicate.
+                The bell sheet is the canonical place to clear notifications. */}
             {activityCount > 0 && (
               <View style={[styles.profileBadge, { backgroundColor: theme.accent }]} />
             )}
@@ -347,17 +349,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
     borderWidth: 1,
-    height: 40,
+    height: 36,
     justifyContent: 'center',
-    position: 'relative',
-    width: 40,
+    overflow: 'visible',
+    width: 36,
   },
   notifBadge: {
     borderRadius: 4,
     height: 8,
     position: 'absolute',
-    right: 0,
-    top: 0,
+    right: -2,
+    top: -2,
     width: 8,
   },
   notifIcon: { fontSize: 16 },
