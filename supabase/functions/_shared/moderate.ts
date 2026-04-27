@@ -50,9 +50,11 @@ async function runHaikuCrisis(
         {
           role: 'user',
           content:
-            'Is this person currently in crisis or distress where they need immediate support? ' +
-            'Reply with exactly one word: "crisis", "processing", or "metaphor".\n\nText: ' +
-            text,
+            'Classify the following social media post. ' +
+            'Reply with exactly one word — crisis, processing, or metaphor — ' +
+            'based on whether the author appears to be in immediate danger, ' +
+            'processing difficult emotions, or using figurative language.\n\n' +
+            '<post>\n' + text + '\n</post>',
         },
       ],
     }),
@@ -60,6 +62,10 @@ async function runHaikuCrisis(
   if (!res.ok) throw new Error(`Anthropic error: ${res.status}`);
   const json = (await res.json()) as { content: { text: string }[] };
   const raw = json.content[0]?.text?.toLowerCase().trim() ?? '';
+  if (raw === 'crisis') return 'crisis';
+  if (raw === 'processing') return 'processing';
+  if (raw === 'metaphor') return 'metaphor';
+  // Haiku added extra words — fall back to substring matching
   if (raw.includes('crisis')) return 'crisis';
   if (raw.includes('processing')) return 'processing';
   return 'metaphor';
@@ -81,6 +87,10 @@ export async function moderateContent(
   const openaiKey = Deno.env.get('OPENAI_API_KEY') ?? '';
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 
+  if (!openaiKey) {
+    return { verdict: 'pass', service: 'config_error_no_openai_key', crisisScore: null };
+  }
+
   try {
     const { flagged } = await runOpenAIMod(text, openaiKey);
     if (flagged) return { verdict: 'reject', service: 'openai', crisisScore: null };
@@ -91,6 +101,10 @@ export async function moderateContent(
 
   if (!crisisHint) {
     return { verdict: 'pass', service: 'openai', crisisScore: null };
+  }
+
+  if (!anthropicKey) {
+    return { verdict: 'pass', service: 'config_error_no_anthropic_key', crisisScore: null };
   }
 
   try {
