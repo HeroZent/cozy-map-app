@@ -14,6 +14,7 @@ import { useMyStories } from './useMyStories';
 import { getSeenCount, isUnread as checkUnread } from './useUnreadReplies';
 import { HandleClaim } from './HandleClaim';
 import { MySulatRow } from './MySulatRow';
+import { DeleteConfirmSheet } from './DeleteConfirmSheet';
 import { supabase } from '@/data/supabase';
 import { StylePicker } from '@/story/StylePicker';
 import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
@@ -30,11 +31,13 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
   const theme = useTheme();
   const sheetRef = useRef<AnimatedSheetRef>(null);
   const { user, loading: userLoading, error: userError } = useUser();
-  const { stories, loading: storiesLoading, error: storiesError } = useMyStories();
+  const { stories, loading: storiesLoading, error: storiesError, deleteStory } = useMyStories();
   const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
   const [seenCounts, setSeenCounts] = useState<Record<string, number>>({});
   const [preferredStyle, setPreferredStyle] = useState<CardStyleId>(DEFAULT_CARD_STYLE);
   const [saved, setSaved] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Resolved handle: prefer the just-claimed one over the DB value.
   const displayHandle = claimedHandle ?? user?.display_handle ?? null;
@@ -67,6 +70,20 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
     if (!saveErr) {
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    setDeleting(true);
+    try {
+      await deleteStory(pendingDeleteId);
+      setPendingDeleteId(null);
+    } catch (err) {
+      console.error('[ProfileModal] delete failed:', err);
+      setPendingDeleteId(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -134,12 +151,21 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
                     onClose();
                     onNavigate(story.lat, story.lng);
                   }}
+                  onDelete={() => setPendingDeleteId(story.id)}
                 />
               ))}
             </ScrollView>
           )}
         </>
       )}
+
+      {/* Delete confirmation overlay — rendered outside ScrollView per DeleteConfirmSheet placement requirement */}
+      <DeleteConfirmSheet
+        visible={pendingDeleteId !== null}
+        deleting={deleting}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </AnimatedSheet>
   );
 }
