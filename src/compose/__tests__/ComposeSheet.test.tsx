@@ -23,8 +23,9 @@ jest.mock('@/data/useUser', () => ({
   }),
 }));
 
+const mockCreate = jest.fn().mockResolvedValue('story-123');
 jest.mock('@/data/useCreateStory', () => ({
-  useCreateStory: () => jest.fn().mockResolvedValue('story-123'),
+  useCreateStory: () => mockCreate,
 }));
 
 jest.mock('@/lib/reverseGeocode', () => ({
@@ -114,5 +115,32 @@ test('does not show hotline overlay when no crisis phrase', async () => {
 
   await waitFor(() => {
     expect(queryByText('HOTLINE_VISIBLE')).toBeNull();
+  });
+});
+
+test('pressing Continue posting after hotline overlay submits post with crisisHint', async () => {
+  const { checkCrisis } = require('@/moderation/crisisTripwire');
+  (checkCrisis as jest.Mock).mockReturnValue(true);
+  mockCreate.mockClear();
+
+  const { getByTestId, getByText, UNSAFE_getAllByType } = render(
+    <ComposeSheet onClose={jest.fn()} coords={{ lat: 14.6, lng: 120.9 }} />,
+  );
+
+  const { TextInput } = require('react-native');
+  const inputs = UNSAFE_getAllByType(TextInput);
+  fireEvent.changeText(inputs[0], 'I want to kill myself');
+
+  // Press Post — tripwire fires, overlay appears
+  fireEvent.press(getByText('Post sulat'));
+  await waitFor(() => expect(getByText('HOTLINE_VISIBLE')).toBeTruthy());
+
+  // Press Continue posting — should call create with crisisHint: true
+  fireEvent.press(getByTestId('hotline-continue'));
+
+  await waitFor(() => {
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ crisisHint: true }),
+    );
   });
 });

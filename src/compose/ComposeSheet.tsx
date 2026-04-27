@@ -91,6 +91,7 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
         cardStyle: selectedStyle,
         crisisHint,
       });
+      setPosting(false);
       onClose();
       onPosted?.();
     } catch (e: unknown) {
