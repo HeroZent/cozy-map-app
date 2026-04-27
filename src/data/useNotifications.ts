@@ -13,6 +13,8 @@ export interface Notification {
 export interface UseNotificationsResult {
   notifications: Notification[];
   memoryCount: number;
+  activityCount: number;
+  activityNotificationIds: string[];
   markRead: (ids: string[]) => Promise<void>;
   loading: boolean;
 }
@@ -103,5 +105,11 @@ export function useNotifications(): UseNotificationsResult {
 
   const memoryCount = notifications.filter((n) => n.type === 'memory_promoted').length;
 
-  return { notifications, memoryCount, markRead, loading };
+  const activityNotifs = notifications.filter(
+    (n) => n.type === 'new_reply' || n.type === 'new_reaction',
+  );
+  const activityCount = activityNotifs.length;
+  const activityNotificationIds = activityNotifs.map((n) => n.id);
+
+  return { notifications, memoryCount, activityCount, activityNotificationIds, markRead, loading };
 }

@@ -33,12 +33,14 @@ jest.mock('@/data/supabase', () => ({
 
 // Test harness wraps the hook so we can observe its output
 function Harness() {
-  const { notifications, memoryCount, markRead, loading } = useNotifications();
+  const { notifications, memoryCount, activityCount, activityNotificationIds, markRead, loading } = useNotifications();
   if (loading) return <Text>loading</Text>;
   return (
     <>
       <Text>{`count-${memoryCount}`}</Text>
       <Text>{`total-${notifications.length}`}</Text>
+      <Text>{`activity-${activityCount}`}</Text>
+      <Text>{`ids-${activityNotificationIds.join(',')}`}</Text>
       <Pressable onPress={() => markRead(notifications.map((n) => n.id))}>
         <Text>mark-read</Text>
       </Pressable>
@@ -93,5 +95,25 @@ describe('useNotifications', () => {
     fireEvent.press(getByText('mark-read'));
     await waitFor(() => expect(getByText('count-0')).toBeTruthy());
     expect(getByText('total-0')).toBeTruthy();
+  });
+
+  it('activityCount counts new_reply and new_reaction but not memory_promoted', async () => {
+    mockNotifications = [
+      { id: 'n1', type: 'new_reply', story_id: 's1', payload: {}, created_at: '2026-01-01' },
+      { id: 'n2', type: 'new_reaction', story_id: 's2', payload: { emoji: 'heart' }, created_at: '2026-01-02' },
+      { id: 'n3', type: 'memory_promoted', story_id: 's3', payload: {}, created_at: '2026-01-03' },
+    ];
+    const { getByText } = render(<Harness />);
+    await waitFor(() => expect(getByText('activity-2')).toBeTruthy());
+    expect(getByText('ids-n1,n2')).toBeTruthy();
+  });
+
+  it('activityCount is 0 and ids is empty when there are no activity notifications', async () => {
+    mockNotifications = [
+      { id: 'n1', type: 'memory_promoted', story_id: 's1', payload: {}, created_at: '2026-01-01' },
+    ];
+    const { getByText } = render(<Harness />);
+    await waitFor(() => expect(getByText('activity-0')).toBeTruthy());
+    expect(getByText('ids-')).toBeTruthy();
   });
 });
