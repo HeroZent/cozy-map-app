@@ -1,5 +1,5 @@
 // src/profile/useMyStories.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/data/supabase';
 
 export interface MyStory {
@@ -83,11 +83,11 @@ export function useMyStories(): UseMyStoriesResult {
     return () => { cancelled = true; };
   }, []);
 
-  const deleteStory = async (id: string): Promise<void> => {
+  const deleteStory = useCallback(async (id: string): Promise<void> => {
     const { error: e } = await supabase.from('stories').delete().eq('id', id);
     if (e) throw e;
     setStories((prev) => prev.filter((s) => s.id !== id));
-  };
+  }, []);
 
   return { stories, loading, error, deleteStory };
 }
