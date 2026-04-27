@@ -18,6 +18,7 @@ export interface UseMyStoriesResult {
   stories: MyStory[];
   loading: boolean;
   error: Error | null;
+  deleteStory: (id: string) => Promise<void>;
 }
 
 type ReactionRow = { emoji: string };
@@ -82,5 +83,11 @@ export function useMyStories(): UseMyStoriesResult {
     return () => { cancelled = true; };
   }, []);
 
-  return { stories, loading, error };
+  const deleteStory = async (id: string): Promise<void> => {
+    const { error: e } = await supabase.from('stories').delete().eq('id', id);
+    if (e) throw e;
+    setStories((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  return { stories, loading, error, deleteStory };
 }
