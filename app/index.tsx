@@ -18,6 +18,7 @@ import type { FlyTarget } from '@/map/MapView';  // import type is erased at bui
 import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
 import { MemoryBanner } from '@/notifications/MemoryBanner';
+import { ActivityBanner } from '@/notifications/ActivityBanner';
 
 const LazyMapView = React.lazy(() => import('@/map/LazyMapView'));
 
@@ -61,7 +62,9 @@ export default function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
-  const { notifications, memoryCount, markRead } = useNotifications();
+  const { notifications, memoryCount, activityCount, activityNotificationIds, markRead } = useNotifications();
+  const replyCount = notifications.filter((n) => n.type === 'new_reply').length;
+  const reactionCount = notifications.filter((n) => n.type === 'new_reaction').length;
 
   const closeAllSheets = () => {
     setSelectedStory(null);
@@ -69,6 +72,14 @@ export default function Home() {
     setLanternOpen(false);
     setSettingsOpen(false);
     setProfileOpen(false);
+  };
+
+  const openProfile = () => {
+    closeAllSheets();
+    if (activityNotificationIds.length > 0) {
+      markRead(activityNotificationIds);
+    }
+    setProfileOpen(true);
   };
 
   const openCompose = (coords?: { lat: number; lng: number }) => {
@@ -112,10 +123,13 @@ export default function Home() {
         <SulatLogo size={26} />
         <View style={styles.headerRight} pointerEvents="box-none">
           <Pressable
-            onPress={() => { closeAllSheets(); setProfileOpen(true); }}
+            onPress={openProfile}
             style={[styles.profileBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
           >
             <Text style={[styles.profileIcon, { color: theme.accent }]}>◉</Text>
+            {activityCount > 0 && (
+              <Text style={[styles.profileBadge, { color: theme.accent }]}>●</Text>
+            )}
           </Pressable>
           <Pressable
             onPress={() => { closeAllSheets(); setSettingsOpen(true); }}
@@ -176,6 +190,14 @@ export default function Home() {
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}
+
+      {/* Activity banner — floats below header, auto-dismisses after 4s */}
+      <ActivityBanner
+        activityCount={activityCount}
+        replyCount={replyCount}
+        reactionCount={reactionCount}
+        topOffset={100}
+      />
 
       {/* Memory banner — floats above nav bar, disappears on tap */}
       <MemoryBanner
@@ -273,6 +295,12 @@ const styles = StyleSheet.create({
     width: 36,
   },
   profileIcon: { fontSize: 16 },
+  profileBadge: {
+    fontSize: 8,
+    position: 'absolute',
+    right: -2,
+    top: -2,
+  },
   settingsBtn: {
     alignItems: 'center',
     borderRadius: 20,
