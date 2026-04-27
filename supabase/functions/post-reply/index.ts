@@ -14,6 +14,11 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const REJECTION_MSG =
   "This reply didn't pass our quiet-space check. If you think this was a mistake, revise it and try again.";
 
+interface PostReplyBody {
+  story_id: string;
+  body: string;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: cors });
@@ -21,7 +26,7 @@ serve(async (req) => {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return new Response('Unauthorized', { status: 401, headers: cors });
 
-  let payload: { story_id: string; body: string };
+  let payload: PostReplyBody;
   try {
     payload = await req.json();
   } catch {
@@ -55,13 +60,17 @@ serve(async (req) => {
   const { data: authUser } = await supa.auth.getUser();
   if (!authUser?.user) return new Response('Unauthorized', { status: 401, headers: cors });
 
-  const { data: story } = await supa
+  const { data: story, error: storyError } = await supa
     .from('stories')
     .select('id')
     .eq('id', payload.story_id)
     .eq('status', 'live')
     .maybeSingle();
 
+  if (storyError) {
+    console.error('[post-reply] story lookup error:', storyError.message);
+    return new Response('Internal server error', { status: 500, headers: cors });
+  }
   if (!story) return new Response('Story not found', { status: 404, headers: cors });
 
   // ── Insert ────────────────────────────────────────────────────────────────
@@ -86,8 +95,8 @@ serve(async (req) => {
     target_id: data.id,
     verdict: modResult.verdict,
     service: modResult.service,
-    crisis_score: null,
-    metadata: {},
+    crisis_score: modResult.crisisScore,
+    metadata: { story_id: payload.story_id },
   });
   if (auditError) {
     console.error('[moderation_events] audit write failed:', auditError.message);
