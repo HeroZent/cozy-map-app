@@ -61,6 +61,7 @@ Object.defineProperty(global, 'Notification', {
 // Define navigator.serviceWorker
 Object.defineProperty(global.navigator, 'serviceWorker', {
   writable: true,
+  configurable: true,
   value: {
     register: jest.fn().mockResolvedValue(mockRegistration),
     ready: Promise.resolve(mockRegistration),

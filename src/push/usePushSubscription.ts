@@ -116,6 +116,9 @@ export function usePushSubscription(): UsePushSubscriptionResult {
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) await subscription.unsubscribe();
 
+      // Always update local state — browser subscription is gone regardless of session
+      setSubscribed(false);
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -125,8 +128,6 @@ export function usePushSubscription(): UsePushSubscriptionResult {
         .from('push_subscriptions')
         .delete()
         .eq('user_id', session.user.id);
-
-      setSubscribed(false);
     } catch (err) {
       console.error('[push] unsubscribe error:', err);
     } finally {
