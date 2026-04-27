@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Switch, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
+import { usePushSubscription } from '@/push/usePushSubscription';
 
 export interface SettingsSheetProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ export interface SettingsSheetProps {
 export function SettingsSheet({ onClose, heatmapOn, onHeatmapToggle, bottomOffset = 0 }: SettingsSheetProps) {
   const theme = useTheme();
   const sheetRef = useRef<AnimatedSheetRef>(null);
+  const { subscribed, loading, permissionDenied, subscribe, unsubscribe } = usePushSubscription();
 
   return (
     <AnimatedSheet ref={sheetRef} style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}>
@@ -29,6 +31,23 @@ export function SettingsSheet({ onClose, heatmapOn, onHeatmapToggle, bottomOffse
       <Row label="Theme" value="Lantern Glow" theme={theme} />
       <Row label="Mode" value="Anonymous — no account needed" theme={theme} />
       <ToggleRow label="Heatmap" enabled={heatmapOn} onToggle={onHeatmapToggle} theme={theme} />
+
+      {/* Push notifications toggle */}
+      <View style={styles.row}>
+        <Text style={[styles.rowLabel, { color: theme.textMuted }]}>Push notifications</Text>
+        {permissionDenied ? (
+          <Text style={[styles.rowValue, { color: theme.textMuted }]}>Enable in browser settings</Text>
+        ) : (
+          <Switch
+            testID="push-notifications-switch"
+            value={subscribed}
+            onValueChange={(val) => (val ? subscribe() : unsubscribe())}
+            disabled={loading}
+            trackColor={{ true: theme.accent, false: theme.textMuted }}
+            thumbColor={theme.surface}
+          />
+        )}
+      </View>
 
       <View style={[styles.divider, { backgroundColor: 'rgba(245,230,200,0.08)' }]} />
 
