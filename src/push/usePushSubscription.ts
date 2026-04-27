@@ -46,18 +46,22 @@ export function usePushSubscription(): UsePushSubscriptionResult {
     }
 
     (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) return;
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) return;
 
-      const { data } = await supabase
-        .from('push_subscriptions')
-        .select('endpoint')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+        const { data } = await supabase
+          .from('push_subscriptions')
+          .select('endpoint')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
 
-      if (data) setSubscribed(true);
+        if (data) setSubscribed(true);
+      } catch (err) {
+        console.error('[push] mount check error:', err);
+      }
     })();
   }, []);
 
