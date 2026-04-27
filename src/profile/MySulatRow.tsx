@@ -32,6 +32,9 @@ export function MySulatRow({ story, isUnread, onNavigate }: MySulatRowProps) {
               {`✦ ${story.reaction_count}`}
             </Text>
           )}
+          {story.is_memory && (
+            <Text style={[styles.memoryBadge, { color: theme.pinMemory.body }]}>✦ memory</Text>
+          )}
           {isUnread && (
             <Text style={[styles.unreadDot, { color: theme.accent }]}>●</Text>
           )}
@@ -45,6 +48,7 @@ const styles = StyleSheet.create({
   badge: { fontSize: 11, fontWeight: '600', marginLeft: 8 },
   body: { fontSize: 14, lineHeight: 20 },
   main: { flex: 1 },
+  memoryBadge: { fontSize: 11, fontStyle: 'italic', marginLeft: 8 },
   meta: { alignItems: 'center', flexDirection: 'row', marginTop: 4 },
   metaTxt: { fontSize: 11 },
   row: { borderBottomWidth: 1, paddingVertical: 12 },

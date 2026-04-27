@@ -11,6 +11,7 @@ export interface MyStory {
   reply_count: number;
   lat: number;
   lng: number;
+  is_memory: boolean;
 }
 
 export interface UseMyStoriesResult {
@@ -28,11 +29,12 @@ type MyStoryRow = {
   created_at: string;
   lat: number;
   lng: number;
+  is_memory: boolean;
   reactions: ReactionRow[];
   replies: ReplyCountRow[];
 };
 
-const SELECT = 'id, body, location_label, created_at, lat, lng, reactions(emoji), replies(count)';
+const SELECT = 'id, body, location_label, created_at, lat, lng, is_memory, reactions(emoji), replies(count)';
 
 export function useMyStories(): UseMyStoriesResult {
   const [stories, setStories] = useState<MyStory[]>([]);
@@ -69,6 +71,7 @@ export function useMyStories(): UseMyStoriesResult {
           reply_count: r.replies?.[0]?.count ?? 0,
           lat: r.lat,
           lng: r.lng,
+          is_memory: r.is_memory ?? false,
         }));
 
         if (!cancelled) { setStories(mapped); setLoading(false); }
