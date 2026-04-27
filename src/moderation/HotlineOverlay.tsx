@@ -1,5 +1,5 @@
 // src/moderation/HotlineOverlay.tsx
-import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { PH_HOTLINE, GLOBAL_FALLBACK_URL } from './hotlines';
 
@@ -22,6 +22,51 @@ export function HotlineOverlay({ visible, onGetHelp, onContinue }: HotlineOverla
     onGetHelp();
   };
 
+  // Card content shared between both render paths
+  const card = (
+    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+      <Text style={[styles.title, { color: theme.textPrimary }]}>
+        Someone sees you 🕯️
+      </Text>
+      <Text style={[styles.body, { color: theme.textMuted }]}>
+        It sounds like you might be going through something heavy. You
+        don't have to carry it alone.
+      </Text>
+      <View style={[styles.hotlineBox, { borderColor: theme.accent }]}>
+        <Text style={[styles.hotlineName, { color: theme.accent }]}>
+          {PH_HOTLINE.name}
+        </Text>
+        <Text style={[styles.hotlineNumber, { color: theme.textPrimary }]}>
+          {PH_HOTLINE.number}
+        </Text>
+      </View>
+      <Pressable
+        style={[styles.btn, { backgroundColor: theme.accent }]}
+        onPress={handleGetHelp}
+      >
+        <Text style={[styles.btnPrimaryTxt, { color: theme.background }]}>
+          Get help now
+        </Text>
+      </Pressable>
+      <Pressable style={styles.btnSecondary} onPress={onContinue}>
+        <Text style={[styles.btnSecondaryTxt, { color: theme.textMuted }]}>
+          Continue posting
+        </Text>
+      </Pressable>
+    </View>
+  );
+
+  // On web, Modal portals don't always work correctly with React Native Web.
+  // Use a fixed-position View instead — position: 'fixed' maps to CSS fixed,
+  // which covers the full viewport regardless of the component's position in the tree.
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.webBackdrop}>
+        {card}
+      </View>
+    );
+  }
+
   return (
     <Modal
       visible
@@ -31,36 +76,7 @@ export function HotlineOverlay({ visible, onGetHelp, onContinue }: HotlineOverla
       onRequestClose={() => { /* intentionally no-op: user must choose a button */ }}
     >
       <View style={styles.backdrop}>
-        <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>
-            Someone sees you 🕯️
-          </Text>
-          <Text style={[styles.body, { color: theme.textMuted }]}>
-            It sounds like you might be going through something heavy. You
-            don't have to carry it alone.
-          </Text>
-          <View style={[styles.hotlineBox, { borderColor: theme.accent }]}>
-            <Text style={[styles.hotlineName, { color: theme.accent }]}>
-              {PH_HOTLINE.name}
-            </Text>
-            <Text style={[styles.hotlineNumber, { color: theme.textPrimary }]}>
-              {PH_HOTLINE.number}
-            </Text>
-          </View>
-          <Pressable
-            style={[styles.btn, { backgroundColor: theme.accent }]}
-            onPress={handleGetHelp}
-          >
-            <Text style={[styles.btnPrimaryTxt, { color: theme.background }]}>
-              Get help now
-            </Text>
-          </Pressable>
-          <Pressable style={styles.btnSecondary} onPress={onContinue}>
-            <Text style={[styles.btnSecondaryTxt, { color: theme.textMuted }]}>
-              Continue posting
-            </Text>
-          </Pressable>
-        </View>
+        {card}
       </View>
     </Modal>
   );
@@ -73,6 +89,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  // Web: position fixed covers the full viewport regardless of parent bounds.
+  // The 'fixed' value is web-only but React Native Web passes it through to CSS.
+  webBackdrop: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    paddingHorizontal: 24,
+    position: 'fixed' as 'absolute', // cast to satisfy TS; RN Web maps 'fixed' to CSS fixed
+    right: 0,
+    top: 0,
+    zIndex: 9999,
   },
   body: {
     fontSize: 14,
