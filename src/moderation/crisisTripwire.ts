@@ -1,4 +1,16 @@
-const CRISIS_PHRASES: readonly string[] = [
+/**
+ * Layer 1 — Client-side crisis keyword tripwire.
+ *
+ * Pure substring match against a static phrase list (English, Filipino,
+ * code-switched). Zero latency, zero cost. A match gates the post and
+ * shows the HotlineOverlay; the crisisHint flag is then forwarded to the
+ * edge function so Layer 2b (Anthropic Haiku) runs instead of Layer 2a only.
+ *
+ * Design intent: high recall, tolerate false positives. The user can always
+ * dismiss the overlay and continue posting. Do not prune phrases to reduce
+ * false positives without also updating tests.
+ */
+export const CRISIS_PHRASES: readonly string[] = [
   // English — explicit
   'kill myself',
   'killing myself',
