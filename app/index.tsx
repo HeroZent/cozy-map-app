@@ -209,6 +209,7 @@ export default function Home() {
         <ProfileModal
           onClose={() => setProfileOpen(false)}
           onNavigate={(lat, lng) => setFlyTarget({ lat, lng, zoom: 14 })}
+          onDeleted={() => setRefreshKey((k) => k + 1)}
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}

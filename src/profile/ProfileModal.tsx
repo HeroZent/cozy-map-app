@@ -24,10 +24,12 @@ export interface ProfileModalProps {
   onClose: () => void;
   /** Called when user taps a sulat row. Caller should fly the map to this location. */
   onNavigate: (lat: number, lng: number) => void;
+  /** Called after a story is successfully deleted so the map can refresh. */
+  onDeleted?: () => void;
   bottomOffset?: number;
 }
 
-export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileModalProps) {
+export function ProfileModal({ onClose, onNavigate, onDeleted, bottomOffset = 0 }: ProfileModalProps) {
   const theme = useTheme();
   const sheetRef = useRef<AnimatedSheetRef>(null);
   const { user, loading: userLoading, error: userError } = useUser();
@@ -79,6 +81,7 @@ export function ProfileModal({ onClose, onNavigate, bottomOffset = 0 }: ProfileM
     try {
       await deleteStory(pendingDeleteId);
       setPendingDeleteId(null);
+      onDeleted?.();
     } catch (err) {
       console.error('[ProfileModal] delete failed:', err);
       setPendingDeleteId(null);
