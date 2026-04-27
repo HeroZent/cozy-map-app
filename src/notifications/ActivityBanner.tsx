@@ -21,6 +21,7 @@ export function ActivityBanner({
 
   useEffect(() => {
     if (activityCount === 0) return;
+    setDismissed(false);
     const timer = setTimeout(() => setDismissed(true), 4000);
     return () => clearTimeout(timer);
   }, [activityCount]);

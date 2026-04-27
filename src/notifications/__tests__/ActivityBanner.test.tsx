@@ -70,4 +70,18 @@ describe('ActivityBanner', () => {
     });
     await waitFor(() => expect(queryByText('💬 2 new replies')).toBeNull());
   });
+
+  it('reappears when activityCount increases after auto-dismiss', async () => {
+    const { rerender, queryByText, getByText } = render(
+      <ActivityBanner activityCount={1} replyCount={1} reactionCount={0} />,
+    );
+    // auto-dismiss the banner
+    act(() => {
+      jest.advanceTimersByTime(4000);
+    });
+    await waitFor(() => expect(queryByText(/💬/)).toBeNull());
+    // new activity arrives
+    rerender(<ActivityBanner activityCount={3} replyCount={3} reactionCount={0} />);
+    expect(getByText('💬 3 new replies')).toBeTruthy();
+  });
 });
