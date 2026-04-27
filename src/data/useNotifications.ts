@@ -48,6 +48,13 @@ const SELECT = `
   stories ( body, location_label, lat, lng, created_at )
 `;
 
+function mapRows(data: NotificationRow[]): Notification[] {
+  return data.map((r) => ({
+    ...r,
+    type: r.type as Notification['type'],
+  }));
+}
+
 export function useNotifications(): UseNotificationsResult {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +87,7 @@ export function useNotifications(): UseNotificationsResult {
       }
 
       if (!cancelled) {
-        setNotifications((data ?? []) as unknown as NotificationRow[] as Notification[]);
+        setNotifications(mapRows((data ?? []) as NotificationRow[]));
         setLoading(false);
       }
     })();
@@ -113,7 +120,7 @@ export function useNotifications(): UseNotificationsResult {
             .is('read_at', null)
             .then(({ data }) => {
               if (mountedRef.current) {
-                setNotifications((data ?? []) as unknown as NotificationRow[] as Notification[]);
+                setNotifications(mapRows((data ?? []) as NotificationRow[]));
               }
             });
         }

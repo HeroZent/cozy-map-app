@@ -41,6 +41,7 @@ function Harness() {
       <Text>{`total-${notifications.length}`}</Text>
       <Text>{`activity-${activityCount}`}</Text>
       <Text>{`ids-${activityNotificationIds.join(',')}`}</Text>
+      <Text>{`stories-body-${notifications[0]?.stories?.body ?? 'none'}`}</Text>
       <Pressable onPress={() => markRead(notifications.map((n) => n.id))}>
         <Text>mark-read</Text>
       </Pressable>
@@ -136,9 +137,9 @@ describe('useNotifications', () => {
     ];
     const { getByText } = render(<Harness />);
     await waitFor(() => expect(getByText('total-1')).toBeTruthy());
-    // The hook exposes the raw notification objects; stories join data is part of them.
-    // We can only observe totals through the Harness — the shape is verified by TypeScript.
     expect(getByText('count-0')).toBeTruthy(); // type is new_reply, not memory_promoted
     expect(getByText('activity-1')).toBeTruthy();
+    // Verify stories join data actually flows through to the Notification object
+    expect(getByText('stories-body-A quiet afternoon in Intramuros')).toBeTruthy();
   });
 });
