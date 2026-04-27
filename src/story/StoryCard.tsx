@@ -1,4 +1,4 @@
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { StoryCardShell } from './StoryCardShell';
 import { Postmark } from './Postmark';
 import { getCardStyle, type CardStyleId } from './cardStyles';
@@ -8,9 +8,10 @@ export interface StoryCardProps {
   cardStyle: CardStyleId;
   locationLabel?: string | null;
   createdAt?: string;
+  hasCrisisNote?: boolean;
 }
 
-export function StoryCard({ body, cardStyle, locationLabel, createdAt }: StoryCardProps) {
+export function StoryCard({ body, cardStyle, locationLabel, createdAt, hasCrisisNote }: StoryCardProps) {
   const def = getCardStyle(cardStyle);
   const showPostmark = def.showPostmark && !!locationLabel && !!createdAt;
 
@@ -37,6 +38,11 @@ export function StoryCard({ body, cardStyle, locationLabel, createdAt }: StoryCa
       >
         {body}
       </Text>
+      {hasCrisisNote && (
+        <View style={styles.crisisIndicator} pointerEvents="none">
+          <Text style={styles.crisisEmoji}>💙</Text>
+        </View>
+      )}
     </StoryCardShell>
   );
 }
@@ -45,5 +51,15 @@ const styles = StyleSheet.create({
   body: {
     position: 'relative',
     zIndex: 1,
+  },
+  crisisIndicator: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    zIndex: 2,
+  },
+  crisisEmoji: {
+    fontSize: 11,
+    opacity: 0.5,
   },
 });

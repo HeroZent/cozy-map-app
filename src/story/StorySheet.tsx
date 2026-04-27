@@ -82,6 +82,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
             cardStyle={story.card_style}
             locationLabel={story.location_label}
             createdAt={story.created_at}
+            hasCrisisNote={story.has_crisis_note}
           />
 
           {/* Reactions */}
