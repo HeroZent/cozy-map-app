@@ -90,4 +90,19 @@ describe('NotificationRow', () => {
     // First 40 chars + '…'
     expect(getByText(`${'A'.repeat(40)}…`)).toBeTruthy();
   });
+
+  it('renders label but no excerpt or meta when stories is null', () => {
+    const { getByText, queryByText } = render(
+      <NotificationRow
+        notification={makeNotif({ stories: null })}
+        isUnread={false}
+        onPress={jest.fn()}
+      />,
+    );
+    // Label still shows
+    expect(getByText('Someone replied to your sulat')).toBeTruthy();
+    // No excerpt or location line — stories is null
+    expect(queryByText(/Intramuros/)).toBeNull();
+    expect(queryByText(/Manila/)).toBeNull();
+  });
 });

@@ -31,7 +31,7 @@ function sulatAge(iso: string): string {
 
 const LABEL: Record<Notification['type'], string> = {
   new_reply: 'Someone replied to your sulat',
-  new_reaction: 'Someone reacted with heart',
+  new_reaction: 'Someone reacted to your sulat',
   memory_promoted: 'Your sulat became a memory',
 };
 
@@ -59,7 +59,7 @@ export function NotificationRow({ notification, isUnread, onPress }: Notificatio
       testID={`notification-row-${notification.id}`}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={LABEL[type]}
+      accessibilityLabel={`${LABEL[type]}, ${relativeTime(created_at)}`}
       style={[
         styles.row,
         {
