@@ -181,6 +181,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
               <ReplyThread
                 storyId={story.id}
                 onCountChange={(delta) => setReplyCount((c) => c + delta)}
+                storyMood={story.mood}
               />
             )}
 

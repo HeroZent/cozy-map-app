@@ -1,6 +1,7 @@
 // src/profile/MySulatRow.tsx
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
+import { PressableScale } from '@/components/PressableScale';
 import type { MyStory } from './useMyStories';
 
 export interface MySulatRowProps {
@@ -14,19 +15,33 @@ export function MySulatRow({ story, isUnread, onNavigate, onDelete }: MySulatRow
   const theme = useTheme();
   const ageDays = Math.floor((Date.now() - new Date(story.created_at).getTime()) / 86400000);
   const timeLabel = ageDays === 0 ? 'today' : ageDays === 1 ? '1d ago' : `${ageDays}d ago`;
+  // MyStory doesn't carry mood — fall back to memory color when applicable, accent otherwise.
+  const stripeColor = story.is_memory ? (theme.pinMemory?.body ?? theme.accent) : theme.accent;
+  const locationText = story.location_label ?? 'somewhere';
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onNavigate}
-      style={[styles.row, { borderBottomColor: 'rgba(245,230,200,0.08)' }]}
+      scaleAmount={0.97}
+      style={[
+        styles.row,
+        {
+          backgroundColor: theme.surfaceElevated,
+          borderColor: theme.border,
+        },
+      ]}
     >
+      {/* Left stripe — gold for normal stories, lavender for memories */}
+      <View style={[styles.stripe, { backgroundColor: stripeColor }]} />
+
       <View style={styles.main}>
         <Text style={[styles.body, { color: theme.textPrimary }]} numberOfLines={2}>
           {story.body}
         </Text>
+
         <View style={styles.meta}>
-          <Text style={[styles.metaTxt, { color: theme.textMuted }]}>
-            {story.location_label ?? 'somewhere'}{' · '}{timeLabel}
+          <Text style={[styles.metaTxt, { color: theme.textMuted }]} numberOfLines={1}>
+            {locationText}{' · '}{timeLabel}
           </Text>
           {story.reaction_count > 0 && (
             <Text style={[styles.badge, { color: theme.accent }]}>
@@ -34,38 +49,71 @@ export function MySulatRow({ story, isUnread, onNavigate, onDelete }: MySulatRow
             </Text>
           )}
           {story.is_memory && (
-            <Text style={[styles.memoryBadge, { color: theme.pinMemory.body }]}>✦ memory</Text>
+            <Text style={[styles.memoryBadge, { color: theme.pinMemory?.body ?? theme.accent }]}>
+              ✦ memory
+            </Text>
           )}
           {isUnread && (
             <Text style={[styles.unreadDot, { color: theme.accent }]}>●</Text>
           )}
         </View>
       </View>
+
       {onDelete && (
-        <Pressable
+        <PressableScale
           onPress={onDelete}
-          style={styles.deleteBtn}
-          hitSlop={8}
+          hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel="Delete sulat"
           testID="delete-sulat-button"
+          style={[
+            styles.deleteBtn,
+            {
+              borderColor: 'rgba(224,123,84,0.28)',
+              backgroundColor: 'rgba(224,123,84,0.08)',
+            },
+          ]}
         >
-          <Text style={[styles.deleteTxt, { color: theme.textMuted }]}>✕</Text>
-        </Pressable>
+          <Text style={[styles.deleteTxt, { color: '#e07b54' }]}>✕</Text>
+        </PressableScale>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: { fontSize: 11, fontWeight: '600', marginLeft: 8 },
-  body: { fontSize: 14, lineHeight: 20 },
-  deleteBtn: { padding: 12, position: 'absolute', right: 0, top: 0 },
-  deleteTxt: { fontSize: 11 },
-  main: { flex: 1, paddingRight: 24 },
-  memoryBadge: { fontSize: 11, fontStyle: 'italic', marginLeft: 8 },
-  meta: { alignItems: 'center', flexDirection: 'row', marginTop: 4 },
+  row: {
+    alignItems: 'flex-start',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  stripe: { width: 3 },
+  main: { flex: 1, gap: 6, padding: 12 },
+
+  body: { fontSize: 13, lineHeight: 19 },
+
+  meta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   metaTxt: { fontSize: 11 },
-  row: { borderBottomWidth: 1, paddingVertical: 12 },
-  unreadDot: { fontSize: 8, marginLeft: 6 },
+  badge: { fontSize: 11, fontWeight: '600' },
+  memoryBadge: { fontSize: 11, fontStyle: 'italic' },
+  unreadDot: { fontSize: 8 },
+
+  deleteBtn: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 26,
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 10,
+    width: 26,
+  },
+  deleteTxt: { fontSize: 11, fontWeight: '600' },
 });

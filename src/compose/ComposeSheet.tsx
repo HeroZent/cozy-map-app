@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, Pressable,
+  View, Text, ScrollView,
   StyleSheet, ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useTheme } from '@/theme/ThemeContext';
 import { MOODS } from '@/moods/catalog';
 import { useCreateStory } from '@/data/useCreateStory';
 import { reverseGeocode } from '@/lib/reverseGeocode';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
+import { PressableScale } from '@/components/PressableScale';
 import type { Mood } from '@/data/types';
 import { useUser } from '@/data/useUser';
 import { StylePicker } from '@/story/StylePicker';
@@ -16,6 +18,8 @@ import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
 import { ComposeCard } from './ComposeCard';
 import { checkCrisis } from '@/moderation/crisisTripwire';
 import { HotlineOverlay } from '@/moderation/HotlineOverlay';
+
+const MAX_CHARS = 500;
 
 export interface ComposeSheetProps {
   /** Pre-filled from double-click. Undefined = use GPS. */
@@ -107,19 +111,51 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
     }
   };
 
+  const charPct = body.length / MAX_CHARS;
+  const charNearMax = charPct >= 0.85;
+
   return (
     <AnimatedSheet
       ref={sheetRef}
-      style={[styles.card, { backgroundColor: theme.surface, bottom: bottomOffset }]}
+      style={[styles.card, { bottom: bottomOffset }]}
     >
+      {/* Base surface */}
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: theme.surface, borderRadius: 18 },
+        ]}
+        pointerEvents="none"
+      />
+      {/* Top-edge gold highlight */}
+      <LinearGradient
+        colors={['rgba(244,201,122,0.18)', 'rgba(244,201,122,0)']}
+        style={styles.topHighlight}
+        pointerEvents="none"
+      />
+
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}>
-          New sulat
-        </Text>
-        <Pressable onPress={() => sheetRef.current?.close(onClose)} style={styles.closeHitbox}>
-          <Text style={[styles.closeTxt, { color: theme.textMuted }]}>✕</Text>
-        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary, fontFamily: theme.fontFamily }]}>
+            new sulat
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+            {moodEntry?.prompt ?? 'leave a note in the world'}
+          </Text>
+        </View>
+        <PressableScale
+          onPress={() => sheetRef.current?.close(onClose)}
+          style={[
+            styles.iconBtn,
+            {
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              borderColor: 'rgba(255,255,255,0.06)',
+            },
+          ]}
+        >
+          <Text style={[styles.iconBtnText, { color: theme.textMuted }]}>✕</Text>
+        </PressableScale>
       </View>
 
       {/* Mood picker */}
@@ -131,20 +167,31 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
       >
         {MOODS.map((m) => {
           const active = m.id === selectedMood;
+          const moodColor = theme.moods[m.id as keyof typeof theme.moods] ?? theme.accent;
           return (
-            <Pressable
+            <PressableScale
               key={m.id}
               onPress={() => setSelectedMood(m.id)}
+              scaleAmount={0.95}
               style={[
                 styles.moodChip,
-                { backgroundColor: active ? theme.accent : 'rgba(245,230,200,0.08)' },
+                {
+                  backgroundColor: active ? `${moodColor}24` : 'rgba(255,255,255,0.03)',
+                  borderColor: active ? `${moodColor}55` : theme.border,
+                  borderRadius: theme.radii.full,
+                },
               ]}
             >
               <Text style={styles.moodEmoji}>{m.emoji}</Text>
-              <Text style={[styles.moodName, { color: active ? '#2a1f0a' : theme.textMuted }]}>
+              <Text
+                style={[
+                  styles.moodName,
+                  { color: active ? moodColor : theme.textMuted },
+                ]}
+              >
                 {m.name}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>
@@ -158,36 +205,76 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
         onChangeText={setBody}
         placeholder={moodEntry?.prompt ?? 'What do you want to say?'}
         locationLabel={placeLabel}
-        maxLength={500}
+        maxLength={MAX_CHARS}
       />
-      <Text style={[styles.charCount, { color: theme.textMuted }]}>{body.length}/500</Text>
 
-      {/* Location */}
-      <View style={styles.locationRow}>
-        <Text style={[styles.locationPin, { color: 'rgba(244,201,122,0.7)' }]}>📍</Text>
-        {!location ? (
-          <Text style={[styles.locationTxt, { color: 'rgba(244,201,122,0.5)' }]}>Getting location…</Text>
-        ) : placeLabel ? (
-          <Text style={[styles.locationTxt, { color: 'rgba(244,201,122,0.5)' }]}>{placeLabel}</Text>
-        ) : (
-          <Text style={[styles.locationTxt, { color: 'rgba(244,201,122,0.5)' }]}>
-            {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+      {/* Char count + location chips */}
+      <View style={styles.metaRow}>
+        {/* Location pill */}
+        <View
+          style={[
+            styles.locationPill,
+            {
+              borderColor: 'rgba(244,201,122,0.18)',
+              backgroundColor: 'rgba(244,201,122,0.06)',
+            },
+          ]}
+        >
+          <Text style={styles.locationIcon}>📍</Text>
+          <Text style={[styles.locationTxt, { color: theme.textMuted }]} numberOfLines={1}>
+            {!location
+              ? 'getting location…'
+              : placeLabel
+                ? placeLabel
+                : `${location.lat.toFixed(3)}, ${location.lng.toFixed(3)}`}
           </Text>
-        )}
+        </View>
+
+        <View style={{ flex: 1 }} />
+
+        {/* Char count chip */}
+        <View
+          style={[
+            styles.charChip,
+            {
+              borderColor: charNearMax ? 'rgba(224,123,84,0.4)' : theme.border,
+              backgroundColor: charNearMax ? 'rgba(224,123,84,0.1)' : 'rgba(255,255,255,0.03)',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.charChipText,
+              { color: charNearMax ? '#e07b54' : theme.textFaint },
+            ]}
+          >
+            {body.length}/{MAX_CHARS}
+          </Text>
+        </View>
       </View>
 
       {error ? <Text style={styles.errorTxt}>{error}</Text> : null}
 
       {/* Post button */}
-      <Pressable
+      <PressableScale
         onPress={() => handlePost()}
         disabled={!canPost}
-        style={[styles.postBtn, { backgroundColor: canPost ? theme.accent : 'rgba(244,201,122,0.3)' }]}
+        style={[
+          styles.postBtn,
+          {
+            backgroundColor: canPost ? '#a3d9b1' : 'rgba(163,217,177,0.3)',
+            borderRadius: theme.radii.md,
+            opacity: canPost ? 1 : 0.7,
+          },
+        ]}
       >
-        {posting
-          ? <ActivityIndicator color="#2a1f0a" />
-          : <Text style={styles.postBtnTxt}>Post sulat</Text>}
-      </Pressable>
+        {posting ? (
+          <ActivityIndicator color="#1a3a1f" />
+        ) : (
+          <Text style={styles.postBtnTxt}>Post sulat</Text>
+        )}
+      </PressableScale>
+
       <HotlineOverlay
         visible={showHotline}
         onGetHelp={() => setShowHotline(false)}
@@ -203,45 +290,95 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
 const styles = StyleSheet.create({
   card: {
     borderRadius: 18,
-    elevation: 12,
+    elevation: 14,
     left: 12,
+    overflow: 'hidden',
     paddingBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 14,
     position: 'absolute',
     right: 12,
     shadowColor: '#1a0e00',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.32,
+    shadowRadius: 24,
   },
-  charCount: { fontSize: 11, marginBottom: 10, textAlign: 'right' },
-  closeHitbox: { marginLeft: 'auto', padding: 4 },
-  closeTxt: { fontSize: 14 },
-  errorTxt: { color: '#ff8a8a', fontSize: 12, marginBottom: 8 },
+  topHighlight: {
+    height: 14,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+
+  /* Header */
   header: { alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
-  headerTitle: { fontSize: 17, fontWeight: '500' },
-  locationPin: { fontSize: 11, marginRight: 4 },
-  locationRow: { alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
-  locationTxt: { fontSize: 12 },
-  moodChip: {
-    alignItems: 'center',
-    borderRadius: 20,
-    flexDirection: 'row',
-    gap: 5,
-    marginRight: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  moodEmoji: { fontSize: 14 },
-  moodName: { fontSize: 12, fontWeight: '500' },
-  moodRow: { paddingBottom: 2, paddingRight: 8 },
-  moodScroll: { marginBottom: 12 },
-  postBtn: {
+  headerTitle: { fontSize: 17, fontWeight: '600', letterSpacing: 0.2 },
+  subtitle: { fontSize: 11, marginTop: 1 },
+  iconBtn: {
     alignItems: 'center',
     borderRadius: 14,
+    borderWidth: 1,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  iconBtnText: { fontSize: 12, lineHeight: 14 },
+
+  /* Mood picker */
+  moodScroll: { marginBottom: 12, marginHorizontal: -2 },
+  moodRow: { gap: 6, paddingHorizontal: 2, paddingVertical: 2 },
+  moodChip: {
+    alignItems: 'center',
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+  },
+  moodEmoji: { fontSize: 12 },
+  moodName: { fontSize: 11.5, fontWeight: '600', letterSpacing: -0.05 },
+
+  /* Meta row */
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  locationPill: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 4,
+    maxWidth: 220,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  locationIcon: { fontSize: 10 },
+  locationTxt: { fontSize: 11, fontWeight: '500' },
+  charChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  charChipText: { fontSize: 10.5, fontWeight: '500', letterSpacing: 0.1 },
+
+  errorTxt: { color: '#ff8a8a', fontSize: 12, marginBottom: 8 },
+
+  /* Post button */
+  postBtn: {
+    alignItems: 'center',
     height: 44,
     justifyContent: 'center',
   },
-  postBtnTxt: { color: '#2a1f0a', fontSize: 15, fontWeight: '600' },
+  postBtnTxt: {
+    color: '#1a3a1f',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
 });

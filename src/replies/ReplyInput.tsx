@@ -1,7 +1,8 @@
 // src/replies/ReplyInput.tsx
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
+import { PressableScale } from '@/components/PressableScale';
 import { checkCrisis } from '@/moderation/crisisTripwire';
 import { HotlineOverlay } from '@/moderation/HotlineOverlay';
 
@@ -51,6 +52,8 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
     submitBody(trimmed);
   };
 
+  const sendDisabled = isEmpty || submitting;
+
   return (
     <View style={styles.wrap}>
       {error ? (
@@ -60,10 +63,15 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
         <TextInput
           style={[
             styles.input,
-            { backgroundColor: theme.background, borderColor: theme.surface, color: theme.textPrimary },
+            {
+              backgroundColor: theme.surfaceElevated,
+              borderColor: theme.border,
+              color: theme.textPrimary,
+              borderRadius: theme.radii.full,
+            },
           ]}
           placeholder="leave a reply…"
-          placeholderTextColor={theme.textMuted}
+          placeholderTextColor={theme.textFaint}
           value={draft}
           onChangeText={(t) => {
             setDraft(t.slice(0, MAX_CHARS));
@@ -72,17 +80,24 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
           editable={!submitting && !showHotline}
           multiline
         />
-        <Pressable
-          style={[styles.sendBtn, { backgroundColor: theme.accent, opacity: (isEmpty || submitting) ? 0.4 : 1 }]}
+        <PressableScale
           onPress={handleSend}
-          disabled={submitting || isEmpty}
+          disabled={sendDisabled}
+          style={[
+            styles.sendBtn,
+            {
+              backgroundColor: sendDisabled ? theme.accentDim : theme.accent,
+              borderRadius: theme.radii.full,
+              opacity: sendDisabled ? 0.55 : 1,
+            },
+          ]}
         >
           {submitting ? (
             <ActivityIndicator color={theme.background} size="small" />
           ) : (
             <Text style={[styles.sendTxt, { color: theme.background }]}>{'↑'}</Text>
           )}
-        </Pressable>
+        </PressableScale>
       </View>
       <HotlineOverlay
         visible={showHotline}
@@ -100,18 +115,16 @@ export function ReplyInput({ onSubmit }: ReplyInputProps) {
 const styles = StyleSheet.create({
   errorTxt: { fontSize: 12, marginBottom: 4 },
   input: {
-    borderRadius: 10,
     borderWidth: 1,
     flex: 1,
     fontSize: 13,
     maxHeight: 80,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
   },
-  row: { flexDirection: 'row', gap: 8 },
+  row: { alignItems: 'flex-end', flexDirection: 'row', gap: 8 },
   sendBtn: {
     alignItems: 'center',
-    borderRadius: 10,
     height: 36,
     justifyContent: 'center',
     width: 36,

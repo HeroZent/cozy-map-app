@@ -21,14 +21,6 @@ function relativeTime(iso: string): string {
   return `${Math.floor(diffHr / 24)}d`;
 }
 
-/** Story age: "today", "1d ago", "5d ago" */
-function sulatAge(iso: string): string {
-  const ageDays = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (ageDays === 0) return 'today';
-  if (ageDays === 1) return '1d ago';
-  return `${ageDays}d ago`;
-}
-
 const LABEL: Record<Notification['type'], string> = {
   new_reply: 'Someone replied to your sulat',
   new_reaction: 'Someone reacted to your sulat',
@@ -51,8 +43,13 @@ export function NotificationRow({ notification, isUnread, onPress }: Notificatio
       : stories.body.length > 40
         ? `${stories.body.slice(0, 40)}…`
         : stories.body;
-  const location = stories?.location_label ?? null;
-  const sulatDate = stories?.created_at ?? null;
+  const tightLocation = stories?.location_label
+    ? (stories.location_label.split(',')[0] ?? stories.location_label).trim()
+    : null;
+
+  // Memory notifications get a lavender accent; everything else uses gold.
+  const accent =
+    type === 'memory_promoted' ? (theme.pinMemory?.body ?? theme.accent) : theme.accent;
 
   return (
     <Pressable
@@ -60,56 +57,125 @@ export function NotificationRow({ notification, isUnread, onPress }: Notificatio
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${LABEL[type]}, ${relativeTime(created_at)}`}
-      style={[
+      style={({ pressed }) => [
         styles.row,
         {
+          backgroundColor: isUnread ? theme.surfaceElevated : 'rgba(255,255,255,0.02)',
+          borderColor: isUnread ? `${accent}26` : theme.border,
           borderLeftColor: isUnread ? '#f4c97a' : 'transparent',
-          backgroundColor: isUnread ? 'rgba(255,255,255,0.05)' : 'transparent',
+          opacity: pressed ? 0.85 : 1,
         },
       ]}
     >
-      <View style={styles.labelRow}>
-        <Text style={styles.icon}>{ICON[type]}</Text>
-        <Text
-          style={[styles.label, { color: theme.textPrimary, opacity: isUnread ? 1 : 0.45 }]}
-          numberOfLines={1}
+      <View style={styles.inner}>
+        {/* Left: icon badge */}
+        <View
+          style={[
+            styles.iconBadge,
+            {
+              backgroundColor: isUnread ? `${accent}1F` : (theme.accentDim ?? 'rgba(244,201,122,0.08)'),
+              borderColor: isUnread ? `${accent}40` : theme.border,
+            },
+          ]}
         >
-          {LABEL[type]}
-        </Text>
-        <Text style={[styles.time, { color: theme.textMuted, opacity: isUnread ? 0.6 : 0.3 }]}>
-          {relativeTime(created_at)}
-        </Text>
+          <Text style={styles.icon}>{ICON[type]}</Text>
+        </View>
+
+        {/* Middle: label + excerpt + meta */}
+        <View style={styles.body}>
+          <Text
+            style={[
+              styles.label,
+              { color: theme.textPrimary, opacity: isUnread ? 1 : 0.55 },
+            ]}
+            numberOfLines={1}
+          >
+            {LABEL[type]}
+          </Text>
+
+          {excerpt !== null && (
+            <Text
+              style={[styles.excerpt, { color: theme.textMuted, opacity: isUnread ? 0.85 : 0.5 }]}
+              numberOfLines={1}
+            >
+              {excerpt}
+            </Text>
+          )}
+
+          {tightLocation && (
+            <Text
+              style={[styles.location, { color: theme.textFaint }]}
+              numberOfLines={1}
+            >
+              📍 {tightLocation}
+            </Text>
+          )}
+        </View>
+
+        {/* Right: time chip + unread dot */}
+        <View style={styles.right}>
+          <View
+            style={[
+              styles.timeChip,
+              {
+                borderColor: isUnread ? `${accent}33` : theme.border,
+                backgroundColor: 'rgba(255,255,255,0.04)',
+              },
+            ]}
+          >
+            <Text style={[styles.timeChipText, { color: theme.textFaint }]}>
+              {relativeTime(created_at)}
+            </Text>
+          </View>
+          {isUnread && (
+            <View style={[styles.unreadDot, { backgroundColor: accent }]} />
+          )}
+        </View>
       </View>
-
-      {excerpt !== null && (
-        <Text
-          style={[styles.excerpt, { color: theme.textMuted, opacity: isUnread ? 0.6 : 0.35 }]}
-          numberOfLines={1}
-        >
-          {excerpt}
-        </Text>
-      )}
-
-      {(location !== null || sulatDate !== null) && (
-        <Text
-          style={[styles.sulatMeta, { color: theme.accent, opacity: isUnread ? 0.6 : 0.35 }]}
-          numberOfLines={1}
-        >
-          {location !== null ? `📍 ${location}` : ''}
-          {location !== null && sulatDate !== null ? ' · ' : ''}
-          {sulatDate !== null ? sulatAge(sulatDate) : ''}
-        </Text>
-      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  excerpt: { fontSize: 9, fontStyle: 'italic', marginBottom: 2, paddingLeft: 20 },
-  icon: { fontSize: 13, marginRight: 6 },
-  label: { flex: 1, fontSize: 10, fontWeight: '500' },
-  labelRow: { alignItems: 'center', flexDirection: 'row', marginBottom: 3 },
-  row: { borderLeftWidth: 4, borderRadius: 6, marginBottom: 6, paddingHorizontal: 8, paddingVertical: 8 },
-  sulatMeta: { fontSize: 9, paddingLeft: 20 },
-  time: { fontSize: 9 },
+  row: {
+    borderLeftWidth: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  inner: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+    padding: 10,
+  },
+
+  iconBadge: {
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
+  icon: { fontSize: 14 },
+
+  body: { flex: 1, gap: 2 },
+  label: { fontSize: 12.5, fontWeight: '600', letterSpacing: -0.05 },
+  excerpt: { fontSize: 11.5 },
+  location: { fontSize: 10.5, marginTop: 2 },
+
+  right: { alignItems: 'flex-end', gap: 4 },
+  timeChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+  },
+  timeChipText: {
+    fontSize: 10,
+    fontWeight: '500',
+    letterSpacing: 0.1,
+  },
+  unreadDot: { borderRadius: 3, height: 6, width: 6 },
 });
