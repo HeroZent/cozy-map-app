@@ -224,7 +224,10 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
         }
 
         const story = (feature.properties as { story: Story }).story;
+        // Below zoom 9 the pin is too tiny to read badges/halos cleanly,
+        // so suppress those decorations to keep low-zoom views clean.
         const reactionCount = zoom >= 9 ? story.reaction_count : 0;
+        const replyCount = zoom >= 9 ? story.reply_count : 0;
         return (
           <Marker key={story.id} longitude={lng} latitude={lat} anchor="center">
             <Pressable onPress={() => onSelect(story)}>
@@ -232,6 +235,7 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
                 mood={story.mood}
                 isMemory={story.is_memory}
                 reactionCount={reactionCount}
+                replyCount={replyCount}
               />
             </Pressable>
           </Marker>

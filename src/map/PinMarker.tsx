@@ -8,6 +8,8 @@ export interface PinMarkerProps {
   mood: Mood;
   isMemory: boolean;
   reactionCount?: number;
+  /** Number of replies on this story. Surfaces as a small badge on the pin. */
+  replyCount?: number;
 }
 
 /**
@@ -17,10 +19,12 @@ export interface PinMarkerProps {
  *
  * Memory stories override the mood tint with the lavender memory glow.
  *
- * High-engagement stories (>2 reactions) get a soft outer halo so they
- * draw the eye without being loud.
+ * Visual cues:
+ *   • Reaction halo: soft outer glow when >2 reactions (eye-catcher).
+ *   • Reply badge:  amber numerical pill at the bottom-right when ≥1 reply
+ *     (signals there's a conversation happening — worth opening).
  */
-export function PinMarker({ mood, isMemory, reactionCount = 0 }: PinMarkerProps) {
+export function PinMarker({ mood, isMemory, reactionCount = 0, replyCount = 0 }: PinMarkerProps) {
   const theme = useTheme();
   const moodEntry = getMoodById(mood);
 
@@ -69,6 +73,20 @@ export function PinMarker({ mood, isMemory, reactionCount = 0 }: PinMarkerProps)
           {theme.pinMemory.decoration}
         </Text>
       )}
+
+      {/* Reply badge — bottom-right corner, only when this story has replies */}
+      {replyCount > 0 && (
+        <View
+          style={[
+            styles.replyBadge,
+            { backgroundColor: theme.accent, borderColor: theme.background },
+          ]}
+        >
+          <Text style={styles.replyBadgeText}>
+            {replyCount > 9 ? '9+' : replyCount}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -112,5 +130,31 @@ const styles = StyleSheet.create({
     top: -3,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
+  },
+
+  /* Reply badge — small amber pill at the bottom-right of the pin */
+  replyBadge: {
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    bottom: -2,
+    elevation: 3,
+    height: 16,
+    justifyContent: 'center',
+    minWidth: 16,
+    paddingHorizontal: 3,
+    position: 'absolute',
+    right: -3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+  },
+  replyBadgeText: {
+    color: '#2a1f0a',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    lineHeight: 11,
   },
 });
