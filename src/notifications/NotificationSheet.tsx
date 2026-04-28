@@ -18,31 +18,43 @@ export interface NotificationSheetProps {
 export function NotificationSheet({ onClose, onNavigate, bottomOffset = 0 }: NotificationSheetProps) {
   const theme = useTheme();
   const sheetRef = useRef<AnimatedSheetRef>(null);
-  const { notifications, activityNotificationIds, markRead, loading } = useNotifications();
+  const { notifications, markRead, loading } = useNotifications();
 
-  // Snapshot the notifications once on first non-loading render.
-  // markRead is optimistic and removes rows from the live array — rendering from
-  // the snapshot means rows stay visible until the sheet is closed.
+  // Snapshot the live notifications on first non-loading render.
+  // Rendering from the snapshot keeps rows visible during this session even
+  // after they're marked read (optimistic markRead removes rows from the live
+  // array). On reopen, a fresh snapshot is taken from whatever's still unread.
+  //
+  // CRITICAL: we do NOT auto-mark-all-read here. That used to be the behaviour
+  // (and it cleared every notification the moment the sheet was opened — so
+  // the second open showed an empty inbox). Marking now only happens on
+  // explicit user action: tapping a row, or the "mark all read" pill.
   const [snapshot, setSnapshot] = useState<Notification[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
-  const markedRef = useRef(false);
+  const snapshottedRef = useRef(false);
 
   useEffect(() => {
-    if (loading || markedRef.current) return;
-    markedRef.current = true;
+    if (loading || snapshottedRef.current) return;
+    snapshottedRef.current = true;
     setSnapshot(notifications);
-    const memoryIds = notifications
-      .filter((n) => n.type === 'memory_promoted')
-      .map((n) => n.id);
-    markRead([...activityNotificationIds, ...memoryIds]).catch((err) => {
-      console.error('[NotificationSheet] markRead failed:', err);
-    });
+    // No auto-markRead here — see comment above.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
   const handleRowPress = (notif: Notification) => {
-    // Call onClose directly (not via animated ref) so it fires immediately —
-    // matches ProfileModal's navigation tap pattern.
+    // Mark just this one as read on the server so it won't reappear next
+    // session. Fire-and-forget; markRead has its own error recovery.
+    if (!readIds.has(notif.id)) {
+      markRead([notif.id]).catch((err) => {
+        console.error('[NotificationSheet] markRead failed:', err);
+      });
+      setReadIds((prev) => {
+        const next = new Set(prev);
+        next.add(notif.id);
+        return next;
+      });
+    }
+    // Call onClose directly (not via animated ref) so navigation feels instant.
     onClose();
     if (notif.stories !== null) {
       onNavigate(notif.stories.lat, notif.stories.lng);
@@ -55,6 +67,13 @@ export function NotificationSheet({ onClose, onNavigate, bottomOffset = 0 }: Not
   );
 
   const handleMarkAllRead = () => {
+    const unreadIds = snapshot
+      .filter((n) => !readIds.has(n.id))
+      .map((n) => n.id);
+    if (unreadIds.length === 0) return;
+    markRead(unreadIds).catch((err) => {
+      console.error('[NotificationSheet] markRead failed:', err);
+    });
     setReadIds(new Set(snapshot.map((n) => n.id)));
   };
 
