@@ -1,122 +1,95 @@
 import { useRef, useCallback } from 'react';
-import { Animated } from 'react-native';
+import { Animated, Easing } from 'react-native';
 
+/**
+ * iOS-style sheet entrance/exit physics.
+ *
+ * Tuned to mimic Apple's UISheetPresentationController:
+ *   • Slides up from below (translateY 32 → 0)
+ *   • Subtle scale settle (0.97 → 1.0) so the card "lands" rather than pops
+ *   • Fast opacity fade-in (0 → 1, ~180ms)
+ *   • Snappy springs — total ~280ms to fully open
+ *
+ * The previous letter-fold animation (~640ms with crease flickers + glint)
+ * was beautiful but too leisurely for iOS muscle memory. This trades the
+ * folded-paper metaphor for crisp Apple-spring physics; the cozy mood-tinted
+ * backdrop in StorySheet preserves the warm aesthetic.
+ */
 export interface SheetAnimationResult {
-  scaleAnim: Animated.Value;
+  /** Vertical translate — slides the sheet up from below. */
+  translateYAnim: Animated.Value;
+  /** Opacity fade — keeps the entrance feeling smooth, not sudden. */
   opacityAnim: Animated.Value;
-  creaseOpacity1: Animated.Value;
-  creaseOpacity2: Animated.Value;
-  glintOpacity: Animated.Value;
-  glintTranslateX: Animated.Value;
+  /** Subtle scale settle — Apple's signature "lands" feel. */
+  scaleAnim: Animated.Value;
   open: () => void;
   close: (onDone: () => void) => void;
 }
 
+const FROM_Y = 32;       // px below resting position when closed
+const FROM_SCALE = 0.97; // start slightly compressed so it "swells" into place
+const OPEN_OPACITY_MS = 180;
+const CLOSE_TRANSLATE_MS = 200;
+const CLOSE_OPACITY_MS = 160;
+
 export function useSheetAnimation(): SheetAnimationResult {
-  const scaleAnim       = useRef(new Animated.Value(0.04)).current;
-  const opacityAnim     = useRef(new Animated.Value(0)).current;
-  const creaseOpacity1  = useRef(new Animated.Value(0)).current;
-  const creaseOpacity2  = useRef(new Animated.Value(0)).current;
-  const glintOpacity    = useRef(new Animated.Value(0)).current;
-  const glintTranslateX = useRef(new Animated.Value(-300)).current;
+  const translateYAnim = useRef(new Animated.Value(FROM_Y)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(FROM_SCALE)).current;
 
   const open = useCallback(() => {
-    // Reset all values
-    scaleAnim.setValue(0.04);
+    // Reset
+    translateYAnim.setValue(FROM_Y);
     opacityAnim.setValue(0);
-    creaseOpacity1.setValue(0);
-    creaseOpacity2.setValue(0);
-    glintOpacity.setValue(0);
-    glintTranslateX.setValue(-300);
+    scaleAnim.setValue(FROM_SCALE);
 
     Animated.parallel([
-      // Fade in fast
       Animated.timing(opacityAnim, {
         toValue: 1,
-        duration: 60,
+        duration: OPEN_OPACITY_MS,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      // Three-phase scale: snap to each crease then settle
-      Animated.sequence([
-        Animated.spring(scaleAnim, {
-          toValue: 0.35,
-          tension: 800,
-          friction: 20,
-          useNativeDriver: true,
-        }),
-        Animated.delay(25),
-        Animated.spring(scaleAnim, {
-          toValue: 0.70,
-          tension: 700,
-          friction: 22,
-          useNativeDriver: true,
-        }),
-        Animated.delay(20),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 350,
-          friction: 26,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Crease 1 flickers at 60ms
-      Animated.sequence([
-        Animated.delay(60),
-        Animated.timing(creaseOpacity1, { toValue: 1, duration: 35, useNativeDriver: true }),
-        Animated.timing(creaseOpacity1, { toValue: 0, duration: 110, useNativeDriver: true }),
-      ]),
-      // Crease 2 flickers at 140ms
-      Animated.sequence([
-        Animated.delay(140),
-        Animated.timing(creaseOpacity2, { toValue: 1, duration: 35, useNativeDriver: true }),
-        Animated.timing(creaseOpacity2, { toValue: 0, duration: 110, useNativeDriver: true }),
-      ]),
-      // Glint fires after unfold settles (~340ms)
-      Animated.sequence([
-        Animated.delay(340),
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(glintOpacity, { toValue: 1, duration: 35, useNativeDriver: true }),
-            Animated.timing(glintOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
-          ]),
-          Animated.timing(glintTranslateX, {
-            toValue: 300,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
+      // iOS-snappy spring: stiff (high tension) + critically damped (high
+      // friction) so it stops cleanly with no bounce.
+      Animated.spring(translateYAnim, {
+        toValue: 0,
+        tension: 320,
+        friction: 22,
+        useNativeDriver: true,
+      }),
+      // Subtle scale settle — slightly less stiff so it lands a hair after
+      // the slide, giving the card a tactile "settle" cue.
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 260,
+        friction: 22,
+        useNativeDriver: true,
+      }),
     ]).start();
-  }, [scaleAnim, opacityAnim, creaseOpacity1, creaseOpacity2, glintOpacity, glintTranslateX]);
+  }, [translateYAnim, opacityAnim, scaleAnim]);
 
   const close = useCallback(
     (onDone: () => void) => {
       Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 0.04,
-          duration: 140,
+        Animated.timing(translateYAnim, {
+          toValue: FROM_Y,
+          duration: CLOSE_TRANSLATE_MS,
+          easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 100,
+          duration: CLOSE_OPACITY_MS,
+          easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
       ]).start(({ finished }) => {
         if (finished) onDone();
       });
     },
-    [scaleAnim, opacityAnim],
+    [translateYAnim, opacityAnim],
   );
 
-  return {
-    scaleAnim,
-    opacityAnim,
-    creaseOpacity1,
-    creaseOpacity2,
-    glintOpacity,
-    glintTranslateX,
-    open,
-    close,
-  };
+  return { translateYAnim, opacityAnim, scaleAnim, open, close };
 }

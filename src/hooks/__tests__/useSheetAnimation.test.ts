@@ -7,17 +7,13 @@ test('returns open and close functions', () => {
   expect(typeof result.current.close).toBe('function');
 });
 
-test('returns 6 animated values', () => {
+test('returns 3 animated values for iOS-style sheet physics', () => {
   const { result } = renderHook(() => useSheetAnimation());
-  const { scaleAnim, opacityAnim, creaseOpacity1, creaseOpacity2, glintOpacity, glintTranslateX } =
-    result.current;
+  const { translateYAnim, opacityAnim, scaleAnim } = result.current;
   // Each is an Animated.Value — check it has a setValue method
-  expect(typeof scaleAnim.setValue).toBe('function');
+  expect(typeof translateYAnim.setValue).toBe('function');
   expect(typeof opacityAnim.setValue).toBe('function');
-  expect(typeof creaseOpacity1.setValue).toBe('function');
-  expect(typeof creaseOpacity2.setValue).toBe('function');
-  expect(typeof glintOpacity.setValue).toBe('function');
-  expect(typeof glintTranslateX.setValue).toBe('function');
+  expect(typeof scaleAnim.setValue).toBe('function');
 });
 
 test('open() does not throw', () => {
