@@ -16,6 +16,7 @@ import { SulatLogo } from '@/brand/SulatLogo';
 import { MapVignette, MapWarmTint } from '@/map/MapVignette';
 import { PressableScale } from '@/components/PressableScale';
 import { GlassSurface } from '@/components/GlassSurface';
+import { ClusterStoriesSheet } from '@/cluster/ClusterStoriesSheet';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
@@ -64,6 +65,9 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
+  /** When a cluster is tapped, this holds the list of stories to show in
+      the cluster sheet. null when no cluster is open. */
+  const [clusterStories, setClusterStories] = useState<Story[] | null>(null);
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null);
   const theme = useTheme();
   const { notifications, memoryCount, activityCount, markRead } = useNotifications();
@@ -93,6 +97,7 @@ export default function Home() {
     setSettingsOpen(false);
     setProfileOpen(false);
     setNotifSheetOpen(false);
+    setClusterStories(null);
   };
 
   const openProfile = () => {
@@ -134,6 +139,7 @@ export default function Home() {
             zoom={viewport.zoom}
             bbox={bbox}
             onSelect={(story) => { closeAllSheets(); setSelectedStory(story); }}
+            onClusterSelect={(list) => { closeAllSheets(); setClusterStories(list); }}
           />
         </LazyMapView>
       </Suspense>
@@ -206,6 +212,19 @@ export default function Home() {
           story={selectedStory}
           onClose={() => setSelectedStory(null)}
           onReacted={() => setRefreshKey((k) => k + 1)}
+          bottomOffset={NAV_HEIGHT + 10}
+        />
+      )}
+
+      {/* Cluster list sheet — fires when a clustered pin is tapped */}
+      {clusterStories && (
+        <ClusterStoriesSheet
+          stories={clusterStories}
+          onClose={() => setClusterStories(null)}
+          onSelectStory={(story) => {
+            setClusterStories(null);
+            setSelectedStory(story);
+          }}
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}
