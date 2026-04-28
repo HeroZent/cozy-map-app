@@ -34,6 +34,20 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
   const { current: map } = useMap();
   const [viewBbox, setViewBbox] = useState<[number, number, number, number]>(bbox);
 
+  // Diagnostic: how many stories share the same coordinates? Stories at the
+  // exact same lng/lat can never visually un-cluster — they paint to the
+  // same pixel. If this logs entries, the cluster sheet IS the right UX.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const groups = new Map<string, number>();
+    stories.forEach((s) => {
+      const k = (s.location.coordinates as [number, number]).join(',');
+      groups.set(k, (groups.get(k) ?? 0) + 1);
+    });
+    const dupes = [...groups.entries()].filter(([, n]) => n > 1);
+    console.log('[duplicate-coords]', { totalStories: stories.length, duplicateGroups: dupes });
+  }, [stories]);
+
   // Track real viewport so supercluster.getClusters only returns features
   // inside the visible window, even when the parent passes a global bbox.
   useEffect(() => {
@@ -63,7 +77,10 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
           const props = feature.properties as { cluster_id: number; point_count: number };
           return (
             <Marker
-              key={`cluster-${props.cluster_id}`}
+              // Include zoom + count in the key so React reconciles cleanly
+              // when supercluster reshapes clusters at a new zoom level.
+              // Without this, clusters can latch a stale Marker across zooms.
+              key={`cluster-${props.cluster_id}-z${Math.floor(zoom)}-n${props.point_count}`}
               longitude={lng}
               latitude={lat}
               anchor="center"
