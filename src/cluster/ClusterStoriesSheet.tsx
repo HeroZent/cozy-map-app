@@ -1,11 +1,25 @@
 // src/cluster/ClusterStoriesSheet.tsx
-import { useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import {
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import { PressableScale } from '@/components/PressableScale';
 import type { Story } from '@/data/types';
+
+const PAGE_SIZE = 5;
+
+/** Sum of engagement signals — higher = more famous. */
+function engagementScore(s: Story): number {
+  return (s.reply_count ?? 0) + (s.reaction_count ?? 0);
+}
 
 export interface ClusterStoriesSheetProps {
   stories: Story[];
@@ -31,6 +45,29 @@ export function ClusterStoriesSheet({
 }: ClusterStoriesSheetProps) {
   const theme = useTheme();
   const sheetRef = useRef<AnimatedSheetRef>(null);
+
+  // Sort once: most-engaged sulats float to the top.
+  const sorted = useMemo(
+    () => [...stories].sort((a, b) => engagementScore(b) - engagementScore(a)),
+    [stories],
+  );
+
+  // Pagination — render PAGE_SIZE rows at a time, reveal more as user scrolls.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const visible = sorted.slice(0, visibleCount);
+  const hasMore = visibleCount < sorted.length;
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!hasMore) return;
+    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+    // Trigger when the user is within 80px of the bottom — feels natural,
+    // doesn't load everything as soon as they crack the sheet open.
+    const distanceToBottom =
+      contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    if (distanceToBottom < 80) {
+      setVisibleCount((v) => Math.min(v + PAGE_SIZE, sorted.length));
+    }
+  };
 
   const handleClose = () => {
     sheetRef.current?.close(onClose);
@@ -71,13 +108,15 @@ export function ClusterStoriesSheet({
           </PressableScale>
         </View>
 
-        {/* Story list */}
+        {/* Story list — paginated by PAGE_SIZE, scroll near bottom to load more */}
         <ScrollView
           style={styles.list}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={120}
         >
-          {stories.map((story) => {
+          {visible.map((story) => {
             const moodEntry = getMoodById(story.mood);
             const moodColor = theme.moods[story.mood as keyof typeof theme.moods] ?? theme.accent;
             const ageDays = Math.floor(
@@ -148,6 +187,22 @@ export function ClusterStoriesSheet({
               </PressableScale>
             );
           })}
+
+          {/* "Showing X of Y" / "loading more" hint at the bottom of the list */}
+          {hasMore && (
+            <View style={styles.moreHint}>
+              <Text style={[styles.moreText, { color: theme.textFaint }]}>
+                Showing {visibleCount} of {sorted.length} — scroll for more
+              </Text>
+            </View>
+          )}
+          {!hasMore && sorted.length > PAGE_SIZE && (
+            <View style={styles.moreHint}>
+              <Text style={[styles.moreText, { color: theme.textFaint }]}>
+                · all {sorted.length} sulat ·
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </AnimatedSheet>
     </View>
@@ -250,5 +305,15 @@ const styles = StyleSheet.create({
   },
   location: {
     fontSize: 11,
+  },
+
+  /* Pagination footer */
+  moreHint: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  moreText: {
+    fontSize: 11,
+    letterSpacing: 0.3,
   },
 });

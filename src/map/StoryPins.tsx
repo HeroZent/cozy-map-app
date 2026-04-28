@@ -1,10 +1,19 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/maplibre';
 import { Pressable } from 'react-native';
 import { PinMarker } from './PinMarker';
 import { ClusterMarker } from './ClusterMarker';
-import { useClusters } from './useClusters';
+import { useClusters, type StoryFeature } from './useClusters';
 import type { Story } from '@/data/types';
+
+/** Engagement signal — replies + reactions. */
+function engagementOf(s: Story): number {
+  return (s.reply_count ?? 0) + (s.reaction_count ?? 0);
+}
+
+/** How many top-engagement leaves to lift out of every cluster as
+ *  individual pins. Keeps famous sulats always visible on the map. */
+const PROMOTE_PER_CLUSTER = 3;
 
 const MemoPinMarker = memo(PinMarker);
 
@@ -67,9 +76,76 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
 
   const { clusters, supercluster } = useClusters(stories, zoom, viewBbox);
 
+  // ── Top-engagement carve-out ────────────────────────────────────────────
+  // For every cluster supercluster returns, lift the most-engaged N stories
+  // out and render them as standalone pins. The remaining (less-engaged)
+  // sulats stay inside a smaller synthetic cluster.
+  //
+  // Effect: famous sulats are always visible. Less famous ones group up
+  // into the cluster — and "graduate" to an individual pin if they ever
+  // climb into the top N.
+  const adjustedClusters = useMemo(() => {
+    type SyntheticCluster = {
+      type: 'Feature';
+      properties: {
+        cluster: true;
+        cluster_id: number;
+        point_count: number;
+        _restLeaves: StoryFeature[];
+      };
+      geometry: { type: 'Point'; coordinates: [number, number] };
+    };
+    type Output = StoryFeature | SyntheticCluster | typeof clusters[number];
+
+    const out: Output[] = [];
+    for (const feature of clusters) {
+      const isCluster = (feature.properties as { cluster?: boolean }).cluster;
+      if (!isCluster) {
+        out.push(feature);
+        continue;
+      }
+      const props = feature.properties as { cluster_id: number; point_count: number };
+
+      const leaves = supercluster.getLeaves(props.cluster_id, 1000) as StoryFeature[];
+      const sorted = [...leaves].sort((a, b) => {
+        const aScore = engagementOf(a.properties.story);
+        const bScore = engagementOf(b.properties.story);
+        return bScore - aScore;
+      });
+
+      const promoted = sorted.slice(0, PROMOTE_PER_CLUSTER);
+      const rest = sorted.slice(PROMOTE_PER_CLUSTER);
+
+      // Top-N promoted → individual pins
+      for (const leaf of promoted) out.push(leaf);
+
+      // 0 left → already covered by promoted pins; skip cluster entirely
+      // 1 left → promote that single one too (cluster-of-one is silly UX)
+      // 2+ left → keep as a synthetic smaller cluster
+      if (rest.length === 1) {
+        out.push(rest[0]!);
+      } else if (rest.length >= 2) {
+        out.push({
+          type: 'Feature',
+          properties: {
+            cluster: true,
+            cluster_id: props.cluster_id,
+            point_count: rest.length,
+            _restLeaves: rest,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: feature.geometry.coordinates as [number, number],
+          },
+        });
+      }
+    }
+    return out;
+  }, [clusters, supercluster]);
+
   return (
     <>
-      {clusters.map((feature) => {
+      {adjustedClusters.map((feature) => {
         const [lng, lat] = feature.geometry.coordinates as [number, number];
         const isCluster = (feature.properties as { cluster?: boolean }).cluster;
 
@@ -99,7 +175,11 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
                     ) => { center: [number, number]; zoom: number } | undefined;
                   };
 
-                  const leaves = supercluster.getLeaves(props.cluster_id, 1000);
+                  // Synthetic clusters carry their leaves directly so we
+                  // skip the top-N that were already promoted to individual
+                  // pins. Real clusters fall back to supercluster.
+                  const restProp = (props as { _restLeaves?: StoryFeature[] })._restLeaves;
+                  const leaves = restProp ?? (supercluster.getLeaves(props.cluster_id, 1000) as StoryFeature[]);
                   if (leaves.length === 0) return;
 
                   const coords = leaves.map(

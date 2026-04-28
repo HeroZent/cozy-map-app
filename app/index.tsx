@@ -224,6 +224,10 @@ export default function Home() {
           onSelectStory={(story) => {
             setClusterStories(null);
             setSelectedStory(story);
+            // Smoothly zoom the map to the picked sulat's pin so the user
+            // sees its place on the map while reading.
+            const [lng, lat] = story.location.coordinates as [number, number];
+            setFlyTarget({ lat, lng, zoom: 16 });
           }}
           bottomOffset={NAV_HEIGHT + 10}
         />
