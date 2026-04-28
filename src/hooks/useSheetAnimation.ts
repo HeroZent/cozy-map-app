@@ -26,11 +26,11 @@ export interface SheetAnimationResult {
   close: (onDone: () => void) => void;
 }
 
-const FROM_Y = 32;       // px below resting position when closed
-const FROM_SCALE = 0.97; // start slightly compressed so it "swells" into place
-const OPEN_OPACITY_MS = 180;
-const CLOSE_TRANSLATE_MS = 200;
-const CLOSE_OPACITY_MS = 160;
+const FROM_Y = 44;       // px below resting position when closed (more visible slide)
+const FROM_SCALE = 0.94; // start more compressed so the "swell" into place is tactile
+const OPEN_OPACITY_MS = 160;
+const CLOSE_TRANSLATE_MS = 180;
+const CLOSE_OPACITY_MS = 140;
 
 export function useSheetAnimation(): SheetAnimationResult {
   const translateYAnim = useRef(new Animated.Value(FROM_Y)).current;
@@ -50,20 +50,19 @@ export function useSheetAnimation(): SheetAnimationResult {
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      // iOS-snappy spring: stiff (high tension) + critically damped (high
-      // friction) so it stops cleanly with no bounce.
+      // iOS-snappy spring with a hint of overshoot — friction lowered so the
+      // card "lands" with a perceptible micro-bounce, like Apple sheets do.
       Animated.spring(translateYAnim, {
         toValue: 0,
-        tension: 320,
-        friction: 22,
+        tension: 340,
+        friction: 16,
         useNativeDriver: true,
       }),
-      // Subtle scale settle — slightly less stiff so it lands a hair after
-      // the slide, giving the card a tactile "settle" cue.
+      // Scale lands a hair after the slide for a tactile settle cue.
       Animated.spring(scaleAnim, {
         toValue: 1,
-        tension: 260,
-        friction: 22,
+        tension: 280,
+        friction: 14,
         useNativeDriver: true,
       }),
     ]).start();
