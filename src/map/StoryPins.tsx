@@ -45,12 +45,15 @@ export function StoryPins({ stories, zoom, bbox, onSelect }: StoryPinsProps) {
                 count={props.point_count}
                 onPress={() => {
                   if (!map) return;
-                  // Unwrap to the raw maplibre instance — both wrapper and raw
-                  // expose flyTo / fitBounds, but raw is most predictable.
-                  const m = (map as unknown as { getMap?: () => unknown }).getMap?.() ?? map;
+                  // Unwrap to the raw maplibre instance for predictable methods.
+                  const m =
+                    (map as unknown as { getMap?: () => unknown }).getMap?.() ?? map;
                   const mm = m as {
                     flyTo: (opts: unknown) => void;
-                    fitBounds: (bounds: [[number, number], [number, number]], opts: unknown) => void;
+                    cameraForBounds: (
+                      bounds: [[number, number], [number, number]],
+                      opts: unknown,
+                    ) => { center: [number, number]; zoom: number } | undefined;
                   };
 
                   const leaves = supercluster.getLeaves(props.cluster_id, 1000);
@@ -69,36 +72,32 @@ export function StoryPins({ stories, zoom, bbox, onSelect }: StoryPinsProps) {
                   const minLat = Math.min(...lats);
                   const maxLat = Math.max(...lats);
 
-                  // Tight clusters (e.g. 2 stories in the same neighborhood):
-                  // fitBounds would only zoom to ~13 and supercluster would
-                  // still group them at radius 60 / maxZoom 14. Force a zoom
-                  // that's guaranteed to be above maxZoom so individual pins
-                  // emerge.
-                  const tinySpread =
-                    (maxLng - minLng) < 0.01 && (maxLat - minLat) < 0.01;
-                  if (tinySpread) {
-                    mm.flyTo({
-                      center: [
-                        (minLng + maxLng) / 2,
-                        (minLat + maxLat) / 2,
-                      ],
-                      zoom: 16,
-                      duration: 600,
-                    });
-                    return;
-                  }
-
-                  mm.fitBounds(
+                  // Compute the natural fit-bounds camera, then ENFORCE a
+                  // minimum zoom of 15. Why 15: supercluster's maxZoom is 14,
+                  // so at zoom <= 14 it still clusters; at zoom 15+ it returns
+                  // individual points. Without this floor, fitBounds for two
+                  // sulats ~5km apart lands at zoom 13-14 and they re-cluster
+                  // immediately — exactly the bug we hit.
+                  const camera = mm.cameraForBounds(
                     [
                       [minLng, minLat],
                       [maxLng, maxLat],
                     ],
-                    {
-                      padding: { top: 100, bottom: 140, left: 60, right: 60 },
-                      duration: 600,
-                      maxZoom: 17,
-                    },
+                    { padding: { top: 100, bottom: 140, left: 60, right: 60 } },
                   );
+                  const naturalZoom = camera?.zoom ?? 15;
+                  const targetZoom = Math.min(Math.max(naturalZoom, 15), 18);
+                  const center =
+                    camera?.center ?? [
+                      (minLng + maxLng) / 2,
+                      (minLat + maxLat) / 2,
+                    ];
+
+                  mm.flyTo({
+                    center,
+                    zoom: targetZoom,
+                    duration: 600,
+                  });
                 }}
               />
             </Marker>
