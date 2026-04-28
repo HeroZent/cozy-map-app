@@ -44,16 +44,24 @@ export function StoryPins({ stories, zoom, bbox, onSelect }: StoryPinsProps) {
               <ClusterMarker
                 count={props.point_count}
                 onPress={() => {
-                  // Smoothly zoom into the cluster — supercluster knows
-                  // exactly what zoom level breaks it apart.
                   if (!map) return;
-                  const expansionZoom = Math.min(
-                    supercluster.getClusterExpansionZoom(props.cluster_id),
-                    16,
+                  // Supercluster's expansionZoom returns the integer zoom level
+                  // at which the cluster splits. Two issues to handle:
+                  //   1. We need to land ABOVE that level — landing AT it can
+                  //      still cluster because Math.floor(zoom) is used in the
+                  //      cluster lookup. Add a +0.6 buffer.
+                  //   2. If a user is already past expansionZoom (e.g. they
+                  //      zoomed manually first), make sure we still zoom in
+                  //      noticeably so the click feels responsive.
+                  const expansionZoom = supercluster.getClusterExpansionZoom(props.cluster_id);
+                  const currentZoom = map.getZoom();
+                  const target = Math.min(
+                    Math.max(expansionZoom + 0.6, currentZoom + 2),
+                    18,
                   );
                   map.flyTo({
                     center: [lng, lat],
-                    zoom: expansionZoom,
+                    zoom: target,
                     duration: 600,
                   });
                 }}
