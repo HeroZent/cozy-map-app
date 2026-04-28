@@ -47,6 +47,13 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
     }
   }, [user?.preferred_card_style]);
 
+  // Sync `location` whenever the parent updates `coords` (e.g. when the
+  // user drags the on-map draft pin). Without this, the post would use the
+  // initial double-tap coords even after the user adjusts the pin.
+  useEffect(() => {
+    if (coords) setLocation(coords);
+  }, [coords?.lat, coords?.lng]);
+
   // Reverse geocode whenever location resolves
   useEffect(() => {
     if (!location) return;

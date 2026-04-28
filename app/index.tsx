@@ -17,6 +17,8 @@ import { MapVignette, MapWarmTint } from '@/map/MapVignette';
 import { PressableScale } from '@/components/PressableScale';
 import { GlassSurface } from '@/components/GlassSurface';
 import { ClusterStoriesSheet } from '@/cluster/ClusterStoriesSheet';
+import { Marker } from 'react-map-gl/maplibre';
+import { DraftPin } from '@/compose/DraftPin';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
@@ -141,6 +143,22 @@ export default function Home() {
             onSelect={(story) => { closeAllSheets(); setSelectedStory(story); }}
             onClusterSelect={(list) => { closeAllSheets(); setClusterStories(list); }}
           />
+
+          {/* Draggable draft pin — only visible while compose is open. Lets
+              the user fine-tune the post location before submitting. */}
+          {composeOpen && composeCoords && (
+            <Marker
+              longitude={composeCoords.lng}
+              latitude={composeCoords.lat}
+              anchor="bottom"
+              draggable
+              onDragEnd={(e) => {
+                setComposeCoords({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+              }}
+            >
+              <DraftPin />
+            </Marker>
+          )}
         </LazyMapView>
       </Suspense>
 
