@@ -22,20 +22,6 @@ export function useClusters(stories: Story[], zoom: number, bbox: [number, numbe
     return s;
   }, [stories]);
 
-  const clusters = useMemo(() => {
-    const out = sc.getClusters(bbox, Math.floor(zoom));
-    if (typeof window !== 'undefined') {
-      const clusterCount = out.filter(
-        (f) => (f.properties as { cluster?: boolean }).cluster,
-      ).length;
-      console.log('[clusters]', {
-        zoom: zoom.toFixed(2),
-        total: out.length,
-        clusters: clusterCount,
-        points: out.length - clusterCount,
-      });
-    }
-    return out;
-  }, [sc, bbox, zoom]);
+  const clusters = useMemo(() => sc.getClusters(bbox, Math.floor(zoom)), [sc, bbox, zoom]);
   return { clusters, supercluster: sc };
 }
