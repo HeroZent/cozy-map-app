@@ -16,6 +16,11 @@ export interface PostmarkProps {
   inkColor: string;
 }
 
+/**
+ * A circular ink-stamp postmark applied to warm card styles.
+ * Slight wobble + concentric rings give it the hand-stamped feel
+ * of a real postal mark, never perfectly aligned.
+ */
 export function Postmark({ locationLabel, date, inkColor }: PostmarkProps) {
   const loc = formatLocation(locationLabel);
   if (!loc) return null;
@@ -25,15 +30,31 @@ export function Postmark({ locationLabel, date, inkColor }: PostmarkProps) {
     <View style={[styles.outer, { borderColor: inkColor }]}>
       <View style={[styles.inner, { borderColor: inkColor }]} />
       <Text style={[styles.text, { color: inkColor }]}>
-        {loc}{'\n'}{dateStr}
+        {loc}{'\n'}
+        <Text style={styles.divider}>—</Text>{'\n'}
+        {dateStr}
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: {
+    alignItems: 'center',
+    borderRadius: 28,
+    borderWidth: 2,
+    height: 56,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    width: 56,
+    /* Stamp wobble — hand-applied feel */
+    transform: [{ rotate: '-4deg' }],
+    zIndex: 2,
+  },
   inner: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderStyle: 'dashed',
     borderWidth: 1,
     bottom: 6,
@@ -42,24 +63,18 @@ const styles = StyleSheet.create({
     right: 6,
     top: 6,
   },
-  outer: {
-    alignItems: 'center',
-    borderRadius: 26,
-    borderWidth: 1.5,
-    height: 52,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 10,
-    top: 10,
-    width: 52,
-    zIndex: 2,
-  },
   text: {
     fontFamily: 'monospace',
-    fontSize: 7,
-    lineHeight: 11,
+    fontSize: 7.5,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    lineHeight: 9.5,
     position: 'relative',
     textAlign: 'center',
     zIndex: 1,
+  },
+  divider: {
+    fontSize: 6,
+    opacity: 0.6,
   },
 });

@@ -5,7 +5,7 @@ import { supabase } from '@/data/supabase';
 // VAPID public key — safe to embed in client code.
 // Generate via: npx web-push generate-vapid-keys
 // Store the private key in Supabase Edge Function secrets as VAPID_PRIVATE_KEY.
-const VAPID_PUBLIC_KEY = 'PASTE_YOUR_VAPID_PUBLIC_KEY_HERE';
+const VAPID_PUBLIC_KEY = 'BD6RMx1LTwK72RI5hpX2SnHcULGHhQIp7CFdISEuawpL1o0qnQ0u_dmwSH_vczNbdd4sdp_-HFhZ44w1MwLvghg';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);

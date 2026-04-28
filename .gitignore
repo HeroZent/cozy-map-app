@@ -44,3 +44,4 @@ yarn-error.*
 
 # git worktrees
 .worktrees/
+.superpowers/

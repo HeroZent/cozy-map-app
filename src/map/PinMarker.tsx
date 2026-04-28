@@ -10,35 +10,104 @@ export interface PinMarkerProps {
   reactionCount?: number;
 }
 
-export function PinMarker({ mood, isMemory }: PinMarkerProps) {
+/**
+ * A story pin on the map. Each mood has its own warm tint that radiates
+ * subtly outward — at a glance you can read the emotional weather of an
+ * area (rose-orange for regret, lavender for dream, sage for hopeful, etc.).
+ *
+ * Memory stories override the mood tint with the lavender memory glow.
+ *
+ * High-engagement stories (>2 reactions) get a soft outer halo so they
+ * draw the eye without being loud.
+ */
+export function PinMarker({ mood, isMemory, reactionCount = 0 }: PinMarkerProps) {
   const theme = useTheme();
   const moodEntry = getMoodById(mood);
-  const tokens = isMemory ? theme.pinMemory : theme.pin;
+
+  // Pick the tint: memory stories use the dedicated memory glow,
+  // others pull from the new mood palette (falls back to amber accent).
+  const tintColor = isMemory
+    ? theme.pinMemory.body
+    : (theme.moods[mood as keyof typeof theme.moods] ?? theme.accent);
+
+  const glowColor = isMemory ? theme.pinMemory.glow : tintColor;
+  const isHighlighted = reactionCount > 2;
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.pin, { backgroundColor: theme.background, borderColor: tokens.body, shadowColor: tokens.glow }]}>
+      {/* Soft outer halo when story has resonance — pulls the eye gently */}
+      {isHighlighted && (
+        <View
+          style={[
+            styles.halo,
+            { backgroundColor: tintColor, opacity: 0.18 },
+          ]}
+          pointerEvents="none"
+        />
+      )}
+
+      <View
+        style={[
+          styles.pin,
+          {
+            backgroundColor: theme.surfaceMuted,
+            borderColor: tintColor,
+            shadowColor: glowColor,
+          },
+        ]}
+      >
         <Text style={styles.emoji}>{moodEntry?.emoji ?? '·'}</Text>
       </View>
-      {isMemory && <Text style={styles.decoration}>{theme.pinMemory.decoration}</Text>}
+
+      {isMemory && (
+        <Text
+          style={[
+            styles.decoration,
+            { color: theme.pinMemory.body, textShadowColor: theme.pinMemory.glow },
+          ]}
+        >
+          {theme.pinMemory.decoration}
+        </Text>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  decoration: { color: '#d0b8ff', fontSize: 10, position: 'absolute', right: -4, top: -4 },
-  emoji: { fontSize: 13 },
+  wrap: {
+    alignItems: 'center',
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  halo: {
+    position: 'absolute',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
   pin: {
     alignItems: 'center',
-    borderRadius: 13,
-    borderWidth: 2,
-    elevation: 4,
-    height: 26,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    elevation: 5,
+    height: 28,
     justifyContent: 'center',
     shadowOffset: { height: 0, width: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    width: 26,
+    shadowOpacity: 0.85,
+    shadowRadius: 10,
+    width: 28,
   },
-  wrap: { alignItems: 'center', height: 30, justifyContent: 'center', width: 30 },
+  emoji: {
+    fontSize: 13.5,
+    lineHeight: 16,
+  },
+  decoration: {
+    fontSize: 11,
+    position: 'absolute',
+    right: -3,
+    top: -3,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 5,
+  },
 });

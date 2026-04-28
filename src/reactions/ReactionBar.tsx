@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { REACTIONS } from './catalog';
 import { useReact } from './useReact';
+import { ReactionChip } from './ReactionChip';
 import type { Story, ReactionEmoji } from '@/data/types';
 
 export interface ReactionBarProps {
@@ -50,41 +51,29 @@ export function ReactionBar({ story, onReacted }: ReactionBarProps) {
 
   return (
     <View style={styles.wrap}>
-      {REACTIONS.map((r) => {
-        const active = localMine.includes(r.emoji);
-        const count = localCounts[r.emoji] ?? 0;
-        return (
-          <Pressable
-            key={r.emoji}
-            onPress={() => handleReact(r.emoji)}
-            style={[
-              styles.chip,
-              { backgroundColor: active ? theme.accent : 'rgba(245,230,200,0.08)' },
-            ]}
-          >
-            <Text style={styles.icon}>{r.icon}</Text>
-            {count > 0 && (
-              <Text style={[styles.count, { color: active ? '#2a1f0a' : theme.textMuted }]}>
-                {count}
-              </Text>
-            )}
-          </Pressable>
-        );
-      })}
+      {REACTIONS.map((r) => (
+        <ReactionChip
+          key={r.emoji}
+          icon={r.icon}
+          count={localCounts[r.emoji] ?? 0}
+          active={localMine.includes(r.emoji)}
+          activeBg={theme.accent}
+          inactiveBg="rgba(245,230,200,0.08)"
+          activeFg="#2a1f0a"
+          inactiveFg={theme.textMuted}
+          onPress={() => handleReact(r.emoji)}
+        />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  chip: {
+  wrap: {
     alignItems: 'center',
-    borderRadius: 16,
     flexDirection: 'row',
-    gap: 3,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
   },
-  count: { fontSize: 11, fontWeight: '600' },
-  icon: { fontSize: 14 },
-  wrap: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
 });

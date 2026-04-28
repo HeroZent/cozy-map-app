@@ -50,8 +50,8 @@ function FoldCornerTriangle({ color }: { color: string }) {
         width: 0,
         height: 0,
         borderStyle: 'solid',
-        borderTopWidth: 28,
-        borderRightWidth: 28,
+        borderTopWidth: 32,
+        borderRightWidth: 32,
         borderBottomWidth: 0,
         borderLeftWidth: 0,
         borderTopColor: color,
@@ -83,6 +83,23 @@ function TornEdgeStrip({ color }: { color: string }) {
   );
 }
 
+/**
+ * Subtle "lifted paper" highlight: a faint top-edge gradient that hints
+ * a sheet curling up from the surface beneath. Disabled for dark cards
+ * (b, d) since highlights read poorly on dark grounds — those use a
+ * subtle bottom shadow instead via the outer shadow tokens.
+ */
+function PaperLift({ tone }: { tone: 'warm' | 'dark' }) {
+  if (tone === 'dark') return null;
+  return (
+    <LinearGradient
+      colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0)']}
+      style={styles.paperLift}
+      pointerEvents="none"
+    />
+  );
+}
+
 // ── Shell ────────────────────────────────────────────────────────────────────
 
 export interface StoryCardShellProps {
@@ -97,6 +114,9 @@ export function StoryCardShell({ cardStyle, children }: StoryCardShellProps) {
     def.backgroundColors.length >= 2
       ? (def.backgroundColors as [string, string, ...string[]])
       : ([def.backgroundColors[0], def.backgroundColors[0]] as [string, string]);
+
+  // Dark vs warm tone determines whether we add the paper-lift highlight.
+  const isDarkTone = cardStyle === 'b' || cardStyle === 'd';
 
   return (
     <View
@@ -124,6 +144,7 @@ export function StoryCardShell({ cardStyle, children }: StoryCardShellProps) {
           <RuledLineOverlay lineColor={def.ruledLineColor} lineHeight={def.lineHeight} />
         )}
         {def.leftMarginStripe && <MarginStripe color={def.leftMarginColor} />}
+        <PaperLift tone={isDarkTone ? 'dark' : 'warm'} />
         {def.foldCorner && <FoldCornerTriangle color={def.foldColor} />}
         {children}
       </LinearGradient>
@@ -132,25 +153,34 @@ export function StoryCardShell({ cardStyle, children }: StoryCardShellProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 14,
-    elevation: 4,
-    overflow: 'hidden',
-    padding: 16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  marginPadding: {
-    paddingLeft: 22,
-  },
   outer: {
-    borderRadius: 14,
-    marginBottom: 10,
+    borderRadius: 16,
+    marginBottom: 12,
     overflow: 'hidden',
+    /* Multi-layer shadow — deeper, softer drop for lifted-paper feel */
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.38,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  card: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    padding: 18,
   },
   tornCard: {
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
+  },
+  marginPadding: {
+    paddingLeft: 22,
+  },
+  paperLift: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 12,
+    zIndex: 1,
   },
 });
