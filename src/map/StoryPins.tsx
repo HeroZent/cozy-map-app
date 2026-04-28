@@ -44,31 +44,61 @@ export function StoryPins({ stories, zoom, bbox, onSelect }: StoryPinsProps) {
               <ClusterMarker
                 count={props.point_count}
                 onPress={() => {
-                  console.log('[cluster] click fired', {
-                    id: props.cluster_id,
-                    count: props.point_count,
-                    hasMap: !!map,
-                  });
-                  if (!map) {
-                    console.warn('[cluster] map ref unavailable');
+                  if (!map) return;
+                  // Unwrap to the raw maplibre instance — both wrapper and raw
+                  // expose flyTo / fitBounds, but raw is most predictable.
+                  const m = (map as unknown as { getMap?: () => unknown }).getMap?.() ?? map;
+                  const mm = m as {
+                    flyTo: (opts: unknown) => void;
+                    fitBounds: (bounds: [[number, number], [number, number]], opts: unknown) => void;
+                  };
+
+                  const leaves = supercluster.getLeaves(props.cluster_id, 1000);
+                  if (leaves.length === 0) {
+                    mm.flyTo({ center: [lng, lat], zoom: 16, duration: 600 });
                     return;
                   }
-                  try {
-                    // Step 1: get the underlying maplibre instance — this
-                    // unwraps any react-map-gl wrapping and gives us the raw
-                    // map with reliable flyTo / fitBounds methods.
-                    const m = (map as unknown as { getMap?: () => unknown }).getMap?.() ?? map;
-                    const currentZoom = (m as { getZoom: () => number }).getZoom();
-                    const newZoom = Math.min(currentZoom + 3, 18);
-                    console.log('[cluster] flyTo', { from: currentZoom, to: newZoom });
-                    (m as { flyTo: (opts: unknown) => void }).flyTo({
-                      center: [lng, lat],
-                      zoom: newZoom,
+
+                  const coords = leaves.map(
+                    (l) => l.geometry.coordinates as [number, number],
+                  );
+                  const lngs = coords.map((c) => c[0]);
+                  const lats = coords.map((c) => c[1]);
+                  const minLng = Math.min(...lngs);
+                  const maxLng = Math.max(...lngs);
+                  const minLat = Math.min(...lats);
+                  const maxLat = Math.max(...lats);
+
+                  // Tight clusters (e.g. 2 stories in the same neighborhood):
+                  // fitBounds would only zoom to ~13 and supercluster would
+                  // still group them at radius 60 / maxZoom 14. Force a zoom
+                  // that's guaranteed to be above maxZoom so individual pins
+                  // emerge.
+                  const tinySpread =
+                    (maxLng - minLng) < 0.01 && (maxLat - minLat) < 0.01;
+                  if (tinySpread) {
+                    mm.flyTo({
+                      center: [
+                        (minLng + maxLng) / 2,
+                        (minLat + maxLat) / 2,
+                      ],
+                      zoom: 16,
                       duration: 600,
                     });
-                  } catch (e) {
-                    console.error('[cluster] flyTo failed', e);
+                    return;
                   }
+
+                  mm.fitBounds(
+                    [
+                      [minLng, minLat],
+                      [maxLng, maxLat],
+                    ],
+                    {
+                      padding: { top: 100, bottom: 140, left: 60, right: 60 },
+                      duration: 600,
+                      maxZoom: 17,
+                    },
+                  );
                 }}
               />
             </Marker>
