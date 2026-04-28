@@ -90,12 +90,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 14,
     borderWidth: 1.5,
-    elevation: 5,
+    elevation: 4,
     height: 28,
     justifyContent: 'center',
+    /* Smaller shadow radius = much cheaper paint when 50+ pins are visible.
+       The mood-tinted border already gives the pin its colored signature,
+       so we don't need the heavy glow to read at a glance. */
     shadowOffset: { height: 0, width: 0 },
-    shadowOpacity: 0.85,
-    shadowRadius: 10,
+    shadowOpacity: 0.6,
+    shadowRadius: 5,
     width: 28,
   },
   emoji: {
