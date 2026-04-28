@@ -18,6 +18,9 @@ export interface MapViewProps {
 
 export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
   const theme = useTheme();
+  // Single source of truth: this hook owns the viewport state. MapView writes
+  // to it on moveEnd; downstream components read the same state via useViewport
+  // (now backed by a module-level subscriber so all consumers see the same data).
   const { viewport, setViewport, loaded } = useViewport();
   const mapRef = useRef<MapRef>(null);
   const lastTapRef = useRef<number>(0);
