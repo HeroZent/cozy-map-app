@@ -1,5 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect } from 'expo-router';
 import { StoryPins } from '@/map/StoryPins';
@@ -350,7 +350,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingTop: 44,
+    /* Web: compact (no status bar to dodge). Native: clear iOS notch / Android status bar. */
+    paddingTop: Platform.OS === 'web' ? 14 : 44,
     paddingBottom: 12,
     zIndex: 5,
   },
@@ -359,6 +360,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    /* Lock the row height so logo and icons cannot drift onto separate baselines */
+    height: 38,
   },
   headerRight: {
     alignItems: 'center',
