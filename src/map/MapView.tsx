@@ -24,6 +24,10 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
   const { viewport, setViewport, loaded } = useViewport();
   const mapRef = useRef<MapRef>(null);
   const lastTapRef = useRef<number>(0);
+  /** Coords of the first tap in a potential double-tap pair. Used to
+   *  average with the second tap so fingertip imprecision (typically
+   *  10–15px between the two contacts) doesn't shift the compose pin. */
+  const firstTapLocRef = useRef<{ lat: number; lng: number } | null>(null);
   /** True if any point during the current touch gesture had 2+ fingers
    *  (i.e. a pinch). Prevents the touch-end double-tap detector from firing
    *  spuriously when the user lifts their fingers off a pinch-zoom. */
@@ -70,6 +74,7 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
         if (e.points.length > 1) {
           wasMultiTouchRef.current = true;
           lastTapRef.current = 0;
+          firstTapLocRef.current = null;
         }
       }}
       onTouchEnd={(e: MapLayerTouchEvent) => {
@@ -88,12 +93,22 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
         // Only handle single-finger taps
         if (e.points.length !== 1) return;
         const now = Date.now();
-        if (now - lastTapRef.current < 300) {
+        const here = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+
+        if (now - lastTapRef.current < 300 && firstTapLocRef.current) {
+          // Double-tap detected. Use the AVERAGE of the two contact points
+          // so any fingertip drift between the two taps cancels out.
+          const first = firstTapLocRef.current;
           e.preventDefault();
-          onDoubleClick({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+          onDoubleClick({
+            lat: (first.lat + here.lat) / 2,
+            lng: (first.lng + here.lng) / 2,
+          });
           lastTapRef.current = 0;
+          firstTapLocRef.current = null;
         } else {
           lastTapRef.current = now;
+          firstTapLocRef.current = here;
         }
       }}
     >
