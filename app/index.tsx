@@ -17,8 +17,7 @@ import { MapVignette, MapWarmTint } from '@/map/MapVignette';
 import { PressableScale } from '@/components/PressableScale';
 import { GlassSurface } from '@/components/GlassSurface';
 import { ClusterStoriesSheet } from '@/cluster/ClusterStoriesSheet';
-import { Marker } from 'react-map-gl/maplibre';
-import { DraftPin } from '@/compose/DraftPin';
+import { DraftPinMarker } from '@/compose/DraftPinMarker';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
@@ -145,19 +144,14 @@ export default function Home() {
           />
 
           {/* Draggable draft pin — only visible while compose is open. Lets
-              the user fine-tune the post location before submitting. */}
+              the user fine-tune the post location before submitting on web.
+              (Native: shown as a static pin pending drag implementation.) */}
           {composeOpen && composeCoords && (
-            <Marker
+            <DraftPinMarker
               longitude={composeCoords.lng}
               latitude={composeCoords.lat}
-              anchor="bottom"
-              draggable
-              onDragEnd={(e) => {
-                setComposeCoords({ lat: e.lngLat.lat, lng: e.lngLat.lng });
-              }}
-            >
-              <DraftPin />
-            </Marker>
+              onDragEnd={(loc) => setComposeCoords(loc)}
+            />
           )}
         </LazyMapView>
       </Suspense>

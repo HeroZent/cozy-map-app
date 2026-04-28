@@ -1,5 +1,7 @@
+// src/map/HeatmapLayer.tsx — NATIVE (iOS/Android) implementation.
+// On the web target Metro picks `HeatmapLayer.web.tsx`.
 import { useMemo } from 'react';
-import { Source, Layer } from 'react-map-gl/maplibre';
+import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import type { Story } from '@/data/types';
 
@@ -7,28 +9,31 @@ export interface HeatmapLayerProps {
   stories: Story[];
 }
 
+const SOURCE_ID = 'story-density';
+const LAYER_ID = 'story-heatmap';
+
 /**
- * Density heatmap over the map. Memoizes the feature collection and
- * paint expression so we don't pass new array references to MapLibre on
- * every render — that was forcing the heatmap to rebuild its internal
- * GPU buffers even when nothing changed.
+ * Native heatmap rendering. Same MapLibre paint expressions as the web
+ * version — supercluster's underlying style spec is identical across
+ * platforms, only the React component wrappers differ.
  */
 export function HeatmapLayer({ stories }: HeatmapLayerProps) {
   const theme = useTheme();
 
   const data = useMemo(
-    () => ({
-      type: 'FeatureCollection' as const,
-      features: stories.map((s) => ({
-        type: 'Feature' as const,
-        properties: {},
-        geometry: { type: 'Point' as const, coordinates: s.location.coordinates },
-      })),
-    }),
+    () =>
+      ({
+        type: 'FeatureCollection',
+        features: stories.map((s) => ({
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'Point', coordinates: s.location.coordinates },
+        })),
+      }) as GeoJSON.FeatureCollection,
     [stories],
   );
 
-  const heatmapGradient = useMemo(() => {
+  const heatmapColor = useMemo(() => {
     const expr: unknown[] = ['interpolate', ['linear'], ['heatmap-density']];
     for (const stop of theme.heatmap) {
       expr.push(stop.offset, stop.color);
@@ -37,19 +42,20 @@ export function HeatmapLayer({ stories }: HeatmapLayerProps) {
   }, [theme.heatmap]);
 
   return (
-    <Source id="story-density" type="geojson" data={data}>
+    <GeoJSONSource id={SOURCE_ID} data={data}>
       <Layer
-        id="story-heatmap"
+        id={LAYER_ID}
         type="heatmap"
+        source={SOURCE_ID}
         paint={{
-          'heatmap-weight':    1,
+          'heatmap-weight': 1,
           'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 9, 3],
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          'heatmap-color':     heatmapGradient as any,
-          'heatmap-radius':    ['interpolate', ['linear'], ['zoom'], 0, 20, 9, 50],
-          'heatmap-opacity':   0.7,
+          'heatmap-color': heatmapColor as any,
+          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 20, 9, 50],
+          'heatmap-opacity': 0.7,
         }}
       />
-    </Source>
+    </GeoJSONSource>
   );
 }

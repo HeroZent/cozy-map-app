@@ -12,6 +12,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { useViewport } from './useViewport';
+import { MapProvider } from './MapContext';
 import type { LatLng } from '@/lib/geo';
 
 export interface FlyTarget extends LatLng {
@@ -98,7 +99,11 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
           }}
           minZoom={5}
         />
-        {children}
+        {/* Expose camera ref so descendants (StoryPins, DraftPin, etc.)
+            can call flyTo without the web-only useMap() hook. */}
+        <MapProvider cameraRef={cameraRef}>
+          {children}
+        </MapProvider>
       </Map>
     </View>
   );
