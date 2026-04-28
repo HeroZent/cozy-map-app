@@ -45,25 +45,49 @@ export function StoryPins({ stories, zoom, bbox, onSelect }: StoryPinsProps) {
                 count={props.point_count}
                 onPress={() => {
                   if (!map) return;
-                  // Supercluster's expansionZoom returns the integer zoom level
-                  // at which the cluster splits. Two issues to handle:
-                  //   1. We need to land ABOVE that level — landing AT it can
-                  //      still cluster because Math.floor(zoom) is used in the
-                  //      cluster lookup. Add a +0.6 buffer.
-                  //   2. If a user is already past expansionZoom (e.g. they
-                  //      zoomed manually first), make sure we still zoom in
-                  //      noticeably so the click feels responsive.
-                  const expansionZoom = supercluster.getClusterExpansionZoom(props.cluster_id);
-                  const currentZoom = map.getZoom();
-                  const target = Math.min(
-                    Math.max(expansionZoom + 0.6, currentZoom + 2),
-                    18,
+                  // Walk every story in this cluster (recursive) so we can fit
+                  // the map exactly to the bounding box of its children. This
+                  // is more reliable than computing expansionZoom because:
+                  //   • It always reveals every pin in the cluster.
+                  //   • It doesn't rely on the floor()/expansion-zoom dance.
+                  //   • Multiple sub-clusters become visible at once.
+                  const leaves = supercluster.getLeaves(props.cluster_id, Infinity);
+                  if (leaves.length === 0) return;
+
+                  const coords = leaves.map(
+                    (l) => l.geometry.coordinates as [number, number],
                   );
-                  map.flyTo({
-                    center: [lng, lat],
-                    zoom: target,
-                    duration: 600,
-                  });
+                  const lngs = coords.map((c) => c[0]);
+                  const lats = coords.map((c) => c[1]);
+                  const minLng = Math.min(...lngs);
+                  const maxLng = Math.max(...lngs);
+                  const minLat = Math.min(...lats);
+                  const maxLat = Math.max(...lats);
+
+                  // Edge case: every story shares ~the same coordinates.
+                  // fitBounds would zoom to infinity, so fall back to a
+                  // generous fixed zoom that breaks the cluster apart.
+                  const tinySpread = (maxLng - minLng) < 0.0008 && (maxLat - minLat) < 0.0008;
+                  if (tinySpread) {
+                    map.flyTo({
+                      center: [lng, lat],
+                      zoom: 16,
+                      duration: 500,
+                    });
+                    return;
+                  }
+
+                  map.fitBounds(
+                    [
+                      [minLng, minLat],
+                      [maxLng, maxLat],
+                    ],
+                    {
+                      padding: { top: 100, bottom: 140, left: 60, right: 60 },
+                      duration: 600,
+                      maxZoom: 17,
+                    },
+                  );
                 }}
               />
             </Marker>
