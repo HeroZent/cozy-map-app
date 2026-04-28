@@ -16,9 +16,11 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
+    "@maplibre/maplibre-react-native": "^11.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.104.1",
     "expo": "~54.0.33",
+    "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",
     "expo-font": "~14.0.11",
     "expo-linear-gradient": "~15.0.8",

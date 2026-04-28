@@ -21,7 +21,12 @@
       "package": "ph.sulat.app",
       "adaptiveIcon": {
         "backgroundColor": "#0a0e22"
-      }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +37,8 @@
       "expo-router",
       "expo-secure-store",
       "expo-location",
-      "expo-font"
+      "expo-font",
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true
