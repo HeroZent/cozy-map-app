@@ -24,6 +24,10 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
   const { viewport, setViewport, loaded } = useViewport();
   const mapRef = useRef<MapRef>(null);
   const lastTapRef = useRef<number>(0);
+  /** True if any point during the current touch gesture had 2+ fingers
+   *  (i.e. a pinch). Prevents the touch-end double-tap detector from firing
+   *  spuriously when the user lifts their fingers off a pinch-zoom. */
+  const wasMultiTouchRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!flyTarget || !mapRef.current) return;
@@ -59,8 +63,28 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
           onDoubleClick({ lat: e.lngLat.lat, lng: e.lngLat.lng });
         }
       }}
+      onTouchStart={(e: MapLayerTouchEvent) => {
+        // Mark gesture as multi-touch the moment 2+ fingers land. We can't
+        // un-mark mid-gesture — once a pinch happens, the entire gesture
+        // is a pinch even if the user lifts a finger and re-lands one.
+        if (e.points.length > 1) {
+          wasMultiTouchRef.current = true;
+          lastTapRef.current = 0;
+        }
+      }}
       onTouchEnd={(e: MapLayerTouchEvent) => {
         if (!onDoubleClick) return;
+
+        // Reset the multi-touch flag once all fingers have left the screen.
+        const remaining =
+          (e.originalEvent as TouchEvent | undefined)?.touches?.length ?? 0;
+
+        if (wasMultiTouchRef.current) {
+          if (remaining === 0) wasMultiTouchRef.current = false;
+          // Don't fire double-tap detection during/after a pinch.
+          return;
+        }
+
         // Only handle single-finger taps
         if (e.points.length !== 1) return;
         const now = Date.now();
