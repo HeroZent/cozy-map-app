@@ -1,5 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Pressable, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect } from 'expo-router';
 import { StoryPins } from '@/map/StoryPins';
@@ -14,6 +14,8 @@ import { useViewport } from '@/map/useViewport';
 import { useTheme } from '@/theme/ThemeContext';
 import { SulatLogo } from '@/brand/SulatLogo';
 import { MapVignette, MapWarmTint } from '@/map/MapVignette';
+import { PressableScale } from '@/components/PressableScale';
+import { GlassSurface } from '@/components/GlassSurface';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
@@ -139,38 +141,64 @@ export default function Home() {
       <MapWarmTint />
       <MapVignette />
 
-      {/* Floating header */}
-      <View style={styles.header} pointerEvents="box-none">
-        <SulatLogo size={26} />
-        <View style={styles.headerRight} pointerEvents="box-none">
-          <Pressable
-            onPress={openProfile}
-            style={[styles.profileBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
-          >
-            <Text style={[styles.profileIcon, { color: theme.accent }]}>◉</Text>
-            {/* Badge stays here as a visual cue directing users to the bell — intentional duplicate.
-                The bell sheet is the canonical place to clear notifications. */}
-            {activityCount > 0 && (
-              <View style={[styles.profileBadge, { backgroundColor: theme.accent }]} />
-            )}
-          </Pressable>
-          <Pressable
-            onPress={openNotifications}
-            style={[styles.notifBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
-          >
-            <Text style={[styles.notifIcon, { color: theme.accent }]}>🔔</Text>
-            {activityCount + memoryCount > 0 && (
-              <View style={[styles.notifBadge, { backgroundColor: theme.accent }]} />
-            )}
-          </Pressable>
-          <Pressable
-            onPress={() => { closeAllSheets(); setSettingsOpen(true); }}
-            style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.accent }]}
-          >
-            <Text style={[styles.settingsIcon, { color: theme.accent }]}>⚙</Text>
-          </Pressable>
+      {/* Floating header — frosted glass strip */}
+      <GlassSurface style={styles.headerGlass} pointerEvents="box-none">
+        <View style={styles.headerInner} pointerEvents="box-none">
+          <SulatLogo size={26} />
+          <View style={styles.headerRight} pointerEvents="box-none">
+            <PressableScale
+              onPress={openProfile}
+              style={[
+                styles.iconBtn,
+                {
+                  backgroundColor: theme.accentDim,
+                  borderColor: theme.border,
+                  borderRadius: theme.radii.full,
+                },
+              ]}
+            >
+              <Text style={[styles.iconBtnText, { color: theme.accent }]}>◉</Text>
+              {/* Badge stays here as a visual cue directing users to the bell — intentional duplicate. */}
+              {activityCount > 0 && (
+                <View style={[styles.iconBadge, { backgroundColor: theme.accent }]} />
+              )}
+            </PressableScale>
+
+            <PressableScale
+              onPress={openNotifications}
+              style={[
+                styles.iconBtn,
+                {
+                  backgroundColor: theme.accentDim,
+                  borderColor: theme.border,
+                  borderRadius: theme.radii.full,
+                },
+              ]}
+            >
+              <Text style={[styles.iconBtnText, { color: theme.accent }]}>🔔</Text>
+              {activityCount + memoryCount > 0 && (
+                <View style={[styles.iconBadge, { backgroundColor: theme.accent }]} />
+              )}
+            </PressableScale>
+
+            <PressableScale
+              onPress={() => { closeAllSheets(); setSettingsOpen(true); }}
+              style={[
+                styles.iconBtn,
+                {
+                  backgroundColor: theme.accentDim,
+                  borderColor: theme.border,
+                  borderRadius: theme.radii.full,
+                },
+              ]}
+            >
+              <Text style={[styles.iconBtnText, { color: theme.accent }]}>⚙</Text>
+            </PressableScale>
+          </View>
         </View>
-      </View>
+        {/* Hairline accent border at the bottom of the glass strip */}
+        <View style={[styles.headerHairline, { backgroundColor: theme.borderSoft }]} />
+      </GlassSurface>
 
       {/* Story card — floats above nav bar */}
       {selectedStory && (
@@ -249,30 +277,60 @@ export default function Home() {
         bottomOffset={NAV_HEIGHT}
       />
 
-      {/* Bottom nav bar */}
-      <View style={[styles.bottomBar, { backgroundColor: theme.surface }]}>
-        <Pressable onPress={handleNearMe} style={styles.navBtn}>
-          <Text style={styles.navIcon}>📍</Text>
-          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Near me</Text>
-        </Pressable>
+      {/* Bottom nav bar — frosted glass dock */}
+      <GlassSurface style={styles.bottomBar}>
+        {/* Hairline accent line at the top of the dock */}
+        <View style={[styles.bottomHairline, { backgroundColor: theme.borderSoft }]} />
 
-        <Pressable
-          onPress={() => openCompose()}
-          style={[styles.fab, { backgroundColor: theme.accent }]}
-        >
-          <Text style={styles.fabPlus}>+</Text>
-        </Pressable>
+        <View style={styles.bottomBarInner}>
+          <PressableScale onPress={handleNearMe} style={styles.navBtn}>
+            <Text style={styles.navIcon}>📍</Text>
+            <Text style={[styles.navLabel, { color: theme.textMuted }]}>Near me</Text>
+          </PressableScale>
 
-        <Pressable onPress={() => { closeAllSheets(); setLanternOpen(true); }} style={styles.navBtn}>
-          <Text style={styles.navIcon}>🪔</Text>
-          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Lantern</Text>
-        </Pressable>
-      </View>
+          {/* Center FAB — raised pillar with multi-layer shadow + golden glow */}
+          <View style={styles.fabWrap} pointerEvents="box-none">
+            {/* Outer halo glow ring */}
+            <View
+              style={[
+                styles.fabHalo,
+                { backgroundColor: theme.accentSoft, borderRadius: theme.radii.full },
+              ]}
+              pointerEvents="none"
+            />
+            <PressableScale
+              onPress={() => openCompose()}
+              scaleAmount={0.92}
+              style={[
+                styles.fab,
+                {
+                  backgroundColor: theme.accent,
+                  borderRadius: theme.radii.full,
+                  ...theme.elevations.glow,
+                },
+              ]}
+            >
+              <Text style={styles.fabPlus}>＋</Text>
+            </PressableScale>
+          </View>
+
+          <PressableScale
+            onPress={() => { closeAllSheets(); setLanternOpen(true); }}
+            style={styles.navBtn}
+          >
+            <Text style={styles.navIcon}>🪔</Text>
+            <Text style={[styles.navLabel, { color: theme.textMuted }]}>Lantern</Text>
+          </PressableScale>
+        </View>
+      </GlassSurface>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
+
+  /* ── Loading skeleton ───────────────────── */
   skeleton: {
     flex: 1,
     backgroundColor: '#0a0e22',
@@ -285,92 +343,120 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0.3,
   },
-  bottomBar: {
-    alignItems: 'center',
-    borderTopColor: 'rgba(244,201,122,0.08)',
-    borderTopWidth: 1,
-    bottom: 0,
-    flexDirection: 'row',
-    height: NAV_HEIGHT,
-    justifyContent: 'space-around',
-    left: 0,
-    paddingBottom: 10,
-    paddingHorizontal: 20,
+
+  /* ── Header (frosted glass strip) ───────── */
+  headerGlass: {
     position: 'absolute',
+    top: 0,
+    left: 0,
     right: 0,
+    paddingTop: 44,
+    paddingBottom: 12,
+    zIndex: 5,
   },
-  fab: {
-    alignItems: 'center',
-    borderRadius: 32,
-    elevation: 8,
-    height: 60,
-    justifyContent: 'center',
-    shadowColor: '#f4c97a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    width: 60,
-  },
-  fabPlus: { color: '#2a1f0a', fontSize: 30, fontWeight: '300' },
-  fill: { flex: 1 },
-  header: {
+  headerInner: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    left: 0,
     paddingHorizontal: 20,
-    paddingTop: 48,
+  },
+  headerRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  headerHairline: {
+    height: 1,
     position: 'absolute',
+    bottom: 0,
+    left: 0,
     right: 0,
+  },
+
+  /* ── Header icon button (round pill) ────── */
+  iconBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 38,
+    height: 38,
+    borderWidth: 1,
+    overflow: 'visible',
+  },
+  iconBtnText: {
+    fontSize: 15,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  iconBadge: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    position: 'absolute',
+    top: 6,
+    right: 6,
+  },
+
+  /* ── Bottom dock ─────────────────────────── */
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: NAV_HEIGHT,
+  },
+  bottomHairline: {
+    height: 1,
+    position: 'absolute',
     top: 0,
+    left: 0,
+    right: 0,
   },
-  headerRight: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  navBtn: { alignItems: 'center', gap: 2 },
-  navIcon: { fontSize: 16 },
-  navLabel: { fontSize: 11, fontWeight: '500' },
-  profileBtn: {
+  bottomBarInner: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
-    height: 36,
-    justifyContent: 'center',
-    overflow: 'visible',
-    width: 36,
+    justifyContent: 'space-around',
+    paddingHorizontal: 24,
+    paddingBottom: 10,
   },
-  profileIcon: { fontSize: 16 },
-  profileBadge: {
-    borderRadius: 4,
-    height: 8,
+
+  /* ── Bottom nav buttons ──────────────────── */
+  navBtn: {
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  navIcon: { fontSize: 17 },
+  navLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+
+  /* ── FAB (compose) ───────────────────────── */
+  fabWrap: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabHalo: {
     position: 'absolute',
-    right: -2,
-    top: -2,
-    width: 8,
+    width: 64,
+    height: 64,
+    opacity: 0.55,
   },
-  notifBtn: {
+  fab: {
     alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
-    height: 36,
     justifyContent: 'center',
-    overflow: 'visible',
-    width: 36,
+    width: 56,
+    height: 56,
   },
-  notifBadge: {
-    borderRadius: 4,
-    height: 8,
-    position: 'absolute',
-    right: -2,
-    top: -2,
-    width: 8,
+  fabPlus: {
+    color: '#2a1f0a',
+    fontSize: 24,
+    fontWeight: '300',
+    lineHeight: 28,
   },
-  notifIcon: { fontSize: 16 },
-  settingsBtn: {
-    alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
-  settingsIcon: { fontSize: 16 },
 });
