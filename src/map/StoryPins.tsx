@@ -12,8 +12,9 @@ function engagementOf(s: Story): number {
 }
 
 /** How many top-engagement leaves to lift out of every cluster as
- *  individual pins. Keeps famous sulats always visible on the map. */
-const PROMOTE_PER_CLUSTER = 3;
+ *  individual pins. Keeps the single most-loved sulat in each region
+ *  always visible on the map; everyone else stays in the cluster. */
+const PROMOTE_PER_CLUSTER = 1;
 
 const MemoPinMarker = memo(PinMarker);
 
