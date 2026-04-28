@@ -38,6 +38,7 @@
       "expo-secure-store",
       "expo-location",
       "expo-font",
+      "expo-notifications",
       "@maplibre/maplibre-react-native"
     ],
     "experiments": {
