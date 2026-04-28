@@ -1,6 +1,8 @@
 // src/moderation/HotlineOverlay.tsx
-import { Linking, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Platform, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
+import { AnimatedSheet } from '@/components/AnimatedSheet';
+import { PressableScale } from '@/components/PressableScale';
 import { PH_HOTLINE, GLOBAL_FALLBACK_URL } from './hotlines';
 
 export interface HotlineOverlayProps {
@@ -22,9 +24,11 @@ export function HotlineOverlay({ visible, onGetHelp, onContinue }: HotlineOverla
     onGetHelp();
   };
 
-  // Card content shared between both render paths
+  // Card content shared between both render paths.
+  // Wrapped in AnimatedSheet so the entrance matches every other sheet:
+  // iOS-snappy slide + scale + fade in ~280ms.
   const card = (
-    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+    <AnimatedSheet style={[styles.card, { backgroundColor: theme.surface }]}>
       <Text style={[styles.title, { color: theme.textPrimary }]}>
         Someone sees you 🕯️
       </Text>
@@ -40,20 +44,20 @@ export function HotlineOverlay({ visible, onGetHelp, onContinue }: HotlineOverla
           {PH_HOTLINE.number}
         </Text>
       </View>
-      <Pressable
+      <PressableScale
         style={[styles.btn, { backgroundColor: theme.accent }]}
         onPress={handleGetHelp}
       >
         <Text style={[styles.btnPrimaryTxt, { color: theme.background }]}>
           Get help now
         </Text>
-      </Pressable>
-      <Pressable style={styles.btnSecondary} onPress={onContinue}>
+      </PressableScale>
+      <PressableScale style={styles.btnSecondary} onPress={onContinue}>
         <Text style={[styles.btnSecondaryTxt, { color: theme.textMuted }]}>
           Continue posting
         </Text>
-      </Pressable>
-    </View>
+      </PressableScale>
+    </AnimatedSheet>
   );
 
   // On web, Modal portals don't always work correctly with React Native Web.
@@ -67,11 +71,12 @@ export function HotlineOverlay({ visible, onGetHelp, onContinue }: HotlineOverla
     );
   }
 
+  // No native Modal animationType — AnimatedSheet handles the entrance.
   return (
     <Modal
       visible
       transparent
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent
       onRequestClose={() => { /* intentionally no-op: user must choose a button */ }}
     >

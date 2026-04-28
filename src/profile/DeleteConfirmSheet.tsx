@@ -1,6 +1,8 @@
 // src/profile/DeleteConfirmSheet.tsx
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
+import { AnimatedSheet } from '@/components/AnimatedSheet';
+import { PressableScale } from '@/components/PressableScale';
 
 const DANGER_COLOR = '#c0392b';
 
@@ -16,6 +18,10 @@ export interface DeleteConfirmSheetProps {
  * Must be rendered as a direct child of the AnimatedSheet root view,
  * NOT nested inside a ScrollView or any overflow:hidden ancestor —
  * the absolute backdrop will be clipped otherwise.
+ *
+ * The card itself uses the shared `AnimatedSheet` so it inherits the
+ * iOS-snappy slide+scale+fade entrance — matches every other sheet in
+ * the app instead of popping in instantly.
  */
 export function DeleteConfirmSheet({ visible, deleting, onConfirm, onCancel }: DeleteConfirmSheetProps) {
   const theme = useTheme();
@@ -24,22 +30,30 @@ export function DeleteConfirmSheet({ visible, deleting, onConfirm, onCancel }: D
 
   return (
     <View style={styles.backdrop}>
-      <View style={[styles.card, { backgroundColor: theme.surface }]}>
+      <AnimatedSheet style={[styles.card, { backgroundColor: theme.surface }]}>
         <Text style={[styles.title, { color: theme.textPrimary }]}>Delete sulat</Text>
         <Text style={[styles.body, { color: theme.textMuted }]}>
           {"This sulat can't be recovered after deletion."}
         </Text>
         <View style={styles.buttons}>
-          <Pressable onPress={deleting ? undefined : onCancel} disabled={deleting} accessibilityRole="button">
+          <PressableScale
+            onPress={deleting ? undefined : onCancel}
+            disabled={deleting}
+            accessibilityRole="button"
+          >
             <Text style={[styles.cancelTxt, { color: theme.textMuted }]}>Cancel</Text>
-          </Pressable>
-          <Pressable onPress={deleting ? undefined : onConfirm} disabled={deleting} accessibilityRole="button">
+          </PressableScale>
+          <PressableScale
+            onPress={deleting ? undefined : onConfirm}
+            disabled={deleting}
+            accessibilityRole="button"
+          >
             <Text style={[styles.deleteTxt, { opacity: deleting ? 0.5 : 1 }]}>
               {deleting ? 'Deleting…' : 'Delete'}
             </Text>
-          </Pressable>
+          </PressableScale>
         </View>
-      </View>
+      </AnimatedSheet>
     </View>
   );
 }
