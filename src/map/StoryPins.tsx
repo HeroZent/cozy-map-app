@@ -71,10 +71,63 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
               <ClusterMarker
                 count={props.point_count}
                 onPress={() => {
-                  // Pull every story in this cluster (recursive). Each leaf
-                  // feature carries the full Story object in its properties,
-                  // so we can hand it straight to the list sheet.
+                  if (!map) return;
+                  const m =
+                    (map as unknown as { getMap?: () => unknown }).getMap?.() ?? map;
+                  const mm = m as {
+                    flyTo: (opts: unknown) => void;
+                    cameraForBounds: (
+                      bounds: [[number, number], [number, number]],
+                      opts: unknown,
+                    ) => { center: [number, number]; zoom: number } | undefined;
+                  };
+
                   const leaves = supercluster.getLeaves(props.cluster_id, 1000);
+                  if (leaves.length === 0) return;
+
+                  const coords = leaves.map(
+                    (l) => l.geometry.coordinates as [number, number],
+                  );
+                  const lngs = coords.map((c) => c[0]);
+                  const lats = coords.map((c) => c[1]);
+                  const minLng = Math.min(...lngs);
+                  const maxLng = Math.max(...lngs);
+                  const minLat = Math.min(...lats);
+                  const maxLat = Math.max(...lats);
+
+                  // Strategy:
+                  //   1. Compute the fit-bounds camera for the cluster's
+                  //      children. If the natural zoom is >= 15, the cluster
+                  //      can un-cluster visually (supercluster.maxZoom = 14)
+                  //      — fly there.
+                  //   2. Otherwise the children sit on top of each other or
+                  //      too close to separate, so open the list sheet.
+                  let camera: { center: [number, number]; zoom: number } | undefined;
+                  try {
+                    camera = mm.cameraForBounds(
+                      [
+                        [minLng, minLat],
+                        [maxLng, maxLat],
+                      ],
+                      { padding: { top: 100, bottom: 140, left: 60, right: 60 } },
+                    );
+                  } catch {
+                    /* if maplibre can't compute (degenerate bounds), fall
+                       through to the list-sheet branch */
+                  }
+
+                  if (camera && camera.zoom >= 15) {
+                    // They can un-cluster — zoom in and let the user explore
+                    // the individual pins on the map.
+                    mm.flyTo({
+                      center: camera.center,
+                      zoom: Math.min(camera.zoom, 18),
+                      duration: 600,
+                    });
+                    return;
+                  }
+
+                  // Otherwise — too tight to un-cluster. Show the list.
                   const inner = leaves
                     .map((l) => (l.properties as { story?: Story }).story)
                     .filter((s): s is Story => !!s);
