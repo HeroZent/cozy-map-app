@@ -44,50 +44,31 @@ export function StoryPins({ stories, zoom, bbox, onSelect }: StoryPinsProps) {
               <ClusterMarker
                 count={props.point_count}
                 onPress={() => {
-                  if (!map) return;
-                  // Walk every story in this cluster (recursive) so we can fit
-                  // the map exactly to the bounding box of its children. This
-                  // is more reliable than computing expansionZoom because:
-                  //   • It always reveals every pin in the cluster.
-                  //   • It doesn't rely on the floor()/expansion-zoom dance.
-                  //   • Multiple sub-clusters become visible at once.
-                  const leaves = supercluster.getLeaves(props.cluster_id, Infinity);
-                  if (leaves.length === 0) return;
-
-                  const coords = leaves.map(
-                    (l) => l.geometry.coordinates as [number, number],
-                  );
-                  const lngs = coords.map((c) => c[0]);
-                  const lats = coords.map((c) => c[1]);
-                  const minLng = Math.min(...lngs);
-                  const maxLng = Math.max(...lngs);
-                  const minLat = Math.min(...lats);
-                  const maxLat = Math.max(...lats);
-
-                  // Edge case: every story shares ~the same coordinates.
-                  // fitBounds would zoom to infinity, so fall back to a
-                  // generous fixed zoom that breaks the cluster apart.
-                  const tinySpread = (maxLng - minLng) < 0.0008 && (maxLat - minLat) < 0.0008;
-                  if (tinySpread) {
-                    map.flyTo({
-                      center: [lng, lat],
-                      zoom: 16,
-                      duration: 500,
-                    });
+                  console.log('[cluster] click fired', {
+                    id: props.cluster_id,
+                    count: props.point_count,
+                    hasMap: !!map,
+                  });
+                  if (!map) {
+                    console.warn('[cluster] map ref unavailable');
                     return;
                   }
-
-                  map.fitBounds(
-                    [
-                      [minLng, minLat],
-                      [maxLng, maxLat],
-                    ],
-                    {
-                      padding: { top: 100, bottom: 140, left: 60, right: 60 },
+                  try {
+                    // Step 1: get the underlying maplibre instance — this
+                    // unwraps any react-map-gl wrapping and gives us the raw
+                    // map with reliable flyTo / fitBounds methods.
+                    const m = (map as unknown as { getMap?: () => unknown }).getMap?.() ?? map;
+                    const currentZoom = (m as { getZoom: () => number }).getZoom();
+                    const newZoom = Math.min(currentZoom + 3, 18);
+                    console.log('[cluster] flyTo', { from: currentZoom, to: newZoom });
+                    (m as { flyTo: (opts: unknown) => void }).flyTo({
+                      center: [lng, lat],
+                      zoom: newZoom,
                       duration: 600,
-                      maxZoom: 17,
-                    },
-                  );
+                    });
+                  } catch (e) {
+                    console.error('[cluster] flyTo failed', e);
+                  }
                 }}
               />
             </Marker>
