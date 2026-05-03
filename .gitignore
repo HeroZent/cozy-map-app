@@ -45,3 +45,6 @@ yarn-error.*
 # git worktrees
 .worktrees/
 .superpowers/
+
+# audio assets
+*.mp3
