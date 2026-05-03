@@ -10,8 +10,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "node jest-runner.js",
+    "test:watch": "node jest-runner.js --watch",
     "test:e2e": "playwright test"
   },
   "dependencies": {
