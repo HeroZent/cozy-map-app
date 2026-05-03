@@ -35,20 +35,24 @@ export function DraftConfirmChip({ coords, onWrite, onCancel }: DraftConfirmChip
     let cancelled = false;
     setLabel(null);
     setError(false);
-    reverseGeocode(coords.lat, coords.lng)
-      .then((result) => {
-        if (cancelled) return;
-        if (!result || !result.short) {
-          setError(true);
-          return;
-        }
-        setLabel(result.short);
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      });
+    const handle = setTimeout(() => {
+      if (cancelled) return;
+      reverseGeocode(coords.lat, coords.lng)
+        .then((result) => {
+          if (cancelled) return;
+          if (!result || !result.short) {
+            setError(true);
+            return;
+          }
+          setLabel(result.short);
+        })
+        .catch(() => {
+          if (!cancelled) setError(true);
+        });
+    }, 250);
     return () => {
       cancelled = true;
+      clearTimeout(handle);
     };
   }, [coords.lat, coords.lng]);
 

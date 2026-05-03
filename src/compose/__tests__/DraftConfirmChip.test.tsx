@@ -100,4 +100,21 @@ describe('DraftConfirmChip', () => {
     fireEvent.press(getByText('✕'));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('debounces reverseGeocode when coords change rapidly', async () => {
+    jest.useFakeTimers();
+    // Mock returns won't matter — we just count calls.
+    reverseGeocode.mockResolvedValue({ short: 'X', full: 'x' });
+    const { rerender } = render(
+      <DraftConfirmChip coords={{ lat: 1, lng: 1 }} onWrite={jest.fn()} onCancel={jest.fn()} />,
+    );
+    rerender(<DraftConfirmChip coords={{ lat: 2, lng: 2 }} onWrite={jest.fn()} onCancel={jest.fn()} />);
+    rerender(<DraftConfirmChip coords={{ lat: 3, lng: 3 }} onWrite={jest.fn()} onCancel={jest.fn()} />);
+    // Three rerenders, but only one reverseGeocode call should fire after the 250ms debounce window.
+    jest.advanceTimersByTime(260);
+    expect(reverseGeocode).toHaveBeenCalledTimes(1);
+    // The signature is reverseGeocode(lat, lng); the call should target the latest coords.
+    expect(reverseGeocode).toHaveBeenLastCalledWith(3, 3);
+    jest.useRealTimers();
+  });
 });
