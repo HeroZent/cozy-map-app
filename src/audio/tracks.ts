@@ -14,6 +14,8 @@
 export type Track = { id: string; displayName: string; source: number };
 
 export const TRACKS: Track[] = [
-  // Example entry once a track is added:
-  // { id: 'quiet-night', displayName: 'Quiet Night', source: require('../../assets/audio/quiet-night.mp3') },
+  { id: 'bawat-piyesa', displayName: 'Bawat Piyesa', source: require('../../assets/audio/Bawat Piyesa.mp3') },
+  { id: 'kalapastangan', displayName: 'Kalapastangan', source: require('../../assets/audio/Kalapastangan.mp3') },
+  { id: 'multo-stripped-down', displayName: 'Multo (Stripped Down)', source: require('../../assets/audio/Multo (Stripped Down).mp3') },
+  { id: 'ride-home', displayName: 'Ride Home', source: require('../../assets/audio/Ride Home.mp3') },
 ];
