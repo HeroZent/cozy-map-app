@@ -156,9 +156,13 @@ export default function Home() {
   // fall through to startDraftFromFab() for the existing GPS-or-center
   // behavior.
   const [fabDragging, setFabDragging] = useState(false);
+  const [fabPressed, setFabPressed] = useState(false);
   const [fabDragOffset, setFabDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const fabArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fabDraggingRef = useRef(false);
+  // Defense-in-depth mirror — the ref is also written directly inside the
+  // grant timer and release/terminate handlers so the drag flag is in sync
+  // independent of React's commit cycle. This effect remains as a safety net.
   useEffect(() => { fabDraggingRef.current = fabDragging; }, [fabDragging]);
   const fabLayoutRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
@@ -167,8 +171,10 @@ export default function Home() {
       onStartShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
         if (fabArmTimerRef.current) clearTimeout(fabArmTimerRef.current);
+        setFabPressed(true);
         fabArmTimerRef.current = setTimeout(() => {
           fabArmTimerRef.current = null;
+          fabDraggingRef.current = true;  // sync ref before React commit, so release reads correctly
           setFabDragging(true);
         }, 200);
       },
@@ -179,7 +185,9 @@ export default function Home() {
       onPanResponderRelease: async (_e, g) => {
         if (fabArmTimerRef.current) { clearTimeout(fabArmTimerRef.current); fabArmTimerRef.current = null; }
         const wasDragging = fabDraggingRef.current;
+        fabDraggingRef.current = false;
         setFabDragging(false);
+        setFabPressed(false);
         setFabDragOffset({ x: 0, y: 0 });
         if (!wasDragging) {
           // Plain tap — fall through to the existing tap handler
@@ -199,7 +207,9 @@ export default function Home() {
       },
       onPanResponderTerminate: () => {
         if (fabArmTimerRef.current) { clearTimeout(fabArmTimerRef.current); fabArmTimerRef.current = null; }
+        fabDraggingRef.current = false;
         setFabDragging(false);
+        setFabPressed(false);
         setFabDragOffset({ x: 0, y: 0 });
       },
     }),
@@ -444,7 +454,7 @@ export default function Home() {
                     transform: [
                       { translateX: fabDragOffset.x },
                       { translateY: fabDragOffset.y },
-                      { scale: fabDragging ? 1.18 : 1 },
+                      { scale: fabDragging ? 1.18 : (fabPressed ? 0.96 : 1) },
                     ],
                   },
                 ]}
