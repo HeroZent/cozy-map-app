@@ -40,56 +40,65 @@ Expected: prints a single line showing the resolved version (no `MISSING`).
 Create `__mocks__/expo-audio.ts` with:
 ```ts
 // Auto-mocked by Jest via jest.mock('expo-audio') in jest.setup.js.
-// Each call to createAudioPlayer() returns a new spy-able fake.
-type StatusListener = (status: { didJustFinish?: boolean; isLoaded?: boolean }) => void;
+// Each call to createAudioPlayer() returns a new spy-able fake that mirrors
+// the real expo-audio AudioPlayer surface used by this codebase.
+
+type StatusListener = (status: { didJustFinish: boolean; isLoaded: boolean; playing: boolean }) => void;
+type EventName = 'playbackStatusUpdate' | 'audioSampleUpdate';
 
 export class FakePlayer {
-  volume = 1;
-  isLoaded = false;
-  source: number | null = null;
+  // Real AudioPlayer fields (subset that the provider actually reads/writes).
+  volume = 1;          // writable property; provider does `player.volume = v`
   paused = true;
-  positionMillis = 0;
-  private listeners: StatusListener[] = [];
+  isLoaded = true;     // createAudioPlayer auto-loads, so default is true
+  playing = false;
+  currentTime = 0;
+  duration = 0;
+  source: number | null = null;
+  private listeners: { [K in EventName]: StatusListener[] } = {
+    playbackStatusUpdate: [],
+    audioSampleUpdate: [],
+  };
 
-  load = jest.fn(async (source: number) => {
-    this.source = source;
-    this.isLoaded = true;
+  // Methods the provider calls. These match the real AudioPlayer API.
+  play = jest.fn(() => { this.paused = false; this.playing = true; });
+  pause = jest.fn(() => { this.paused = true; this.playing = false; });
+  replace = jest.fn((source: number) => { this.source = source; this.isLoaded = true; });
+  remove = jest.fn(() => { this.isLoaded = false; });
+  addListener = jest.fn((eventName: EventName, listener: StatusListener) => {
+    this.listeners[eventName].push(listener);
+    return {
+      remove: () => {
+        this.listeners[eventName] = this.listeners[eventName].filter((l) => l !== listener);
+      },
+    };
   });
-  unload = jest.fn(async () => {
-    this.isLoaded = false;
-  });
-  play = jest.fn(() => {
-    this.paused = false;
-  });
-  pause = jest.fn(() => {
-    this.paused = true;
-  });
-  setVolume = jest.fn((v: number) => {
-    this.volume = v;
-  });
-  addListener = jest.fn((listener: StatusListener) => {
-    this.listeners.push(listener);
-    return { remove: () => { this.listeners = this.listeners.filter((l) => l !== listener); } };
-  });
+
   // Test helper — call from tests to simulate end-of-track.
   __emitFinish = () => {
-    this.listeners.forEach((l) => l({ didJustFinish: true }));
+    this.listeners.playbackStatusUpdate.forEach((l) =>
+      l({ didJustFinish: true, isLoaded: true, playing: false })
+    );
   };
 }
 
+// Tests must reset this in beforeEach: `__lastPlayer.current = null;`
 export const __lastPlayer = { current: null as FakePlayer | null };
 
-export const createAudioPlayer = jest.fn(() => {
+export const createAudioPlayer = jest.fn((source?: number) => {
   const p = new FakePlayer();
+  if (typeof source === 'number') p.source = source;
   __lastPlayer.current = p;
   return p;
 });
 
 export const setAudioModeAsync = jest.fn(async () => {});
+export const setIsAudioActiveAsync = jest.fn(async () => {});
 
-export const AudioModule = {
-  getStatusAsync: jest.fn(async () => ({ isLoaded: false, isOtherAudioPlaying: false })),
-};
+// AudioModule is exported by the real package but the only public surface we use
+// is via top-level functions (setAudioModeAsync etc.). We expose a stub object
+// so any defensive `import { AudioModule } from 'expo-audio'` doesn't throw.
+export const AudioModule = {};
 ```
 
 - [ ] **Step 4: Wire the mock in jest.setup.js**
@@ -302,8 +311,8 @@ git commit -m "feat(audio): track manifest scaffold (empty until user provides M
 
 Create `src/audio/__tests__/audioSession.test.ts`:
 ```ts
-import { setAudioModeAsync, AudioModule } from 'expo-audio';
-import { configureAudioSession, isOtherAudioPlaying } from '../audioSession';
+import { setAudioModeAsync } from 'expo-audio';
+import { configureAudioSession } from '../audioSession';
 
 describe('audioSession', () => {
   beforeEach(() => {
@@ -321,28 +330,12 @@ describe('audioSession', () => {
     });
   });
 
-  test('isOtherAudioPlaying returns false when AudioModule reports nothing playing', async () => {
-    (AudioModule.getStatusAsync as jest.Mock).mockResolvedValueOnce({ isOtherAudioPlaying: false });
-    const result = await isOtherAudioPlaying();
-    expect(result).toBe(false);
-  });
-
-  test('isOtherAudioPlaying returns true when another app is playing audio', async () => {
-    (AudioModule.getStatusAsync as jest.Mock).mockResolvedValueOnce({ isOtherAudioPlaying: true });
-    const result = await isOtherAudioPlaying();
-    expect(result).toBe(true);
-  });
-
-  test('isOtherAudioPlaying returns false on web (skips the check)', async () => {
-    // Web has no concept of "is other audio playing" we can poll.
-    // Implementation should detect Platform.OS === 'web' and short-circuit.
-    // Simulated by overriding Platform in the test environment.
+  test('configureAudioSession is a no-op on web', async () => {
     jest.resetModules();
     jest.doMock('react-native', () => ({ Platform: { OS: 'web' } }));
-    const { isOtherAudioPlaying: webImpl } = await import('../audioSession');
-    const result = await webImpl();
-    expect(result).toBe(false);
-    expect(AudioModule.getStatusAsync).not.toHaveBeenCalled();
+    const { configureAudioSession: webImpl } = await import('../audioSession');
+    await webImpl();
+    expect(setAudioModeAsync).not.toHaveBeenCalled();
   });
 });
 ```
@@ -360,18 +353,19 @@ Expected: FAIL with "Cannot find module '../audioSession'".
 Create `src/audio/audioSession.ts`:
 ```ts
 import { Platform } from 'react-native';
-import { setAudioModeAsync, AudioModule } from 'expo-audio';
+import { setAudioModeAsync } from 'expo-audio';
 
 /**
- * Configure the audio session to mix politely with other audio.
+ * Configure the audio session to mix with other audio.
  *
- * - iOS: AVAudioSessionCategoryAmbient-equivalent — yields to other audio,
- *   respects the silent switch.
- * - Android: mixWithOthers — does not request audio focus, plays alongside
- *   other apps. Combined with isOtherAudioPlaying() guard at startup, this
- *   means we stay silent when the user is already listening to something.
+ * - iOS / Android (native): mixWithOthers — Sulat coexists with whatever else
+ *   is playing. Ambient-style mixing on iOS, no audio-focus request on Android.
  * - Web: no-op; autoplay handling lives in the provider via volume=0 +
  *   first-pointerdown unlock.
+ *
+ * NOTE: `expo-audio` 1.x has no public API to query whether other apps are
+ * producing audio, so a true "yield to existing audio" behavior is not
+ * achievable here. See the spec's "Audio focus follow-up" section.
  */
 export async function configureAudioSession(): Promise<void> {
   if (Platform.OS === 'web') return;
@@ -381,21 +375,6 @@ export async function configureAudioSession(): Promise<void> {
     interruptionMode: 'mixWithOthers',
   });
 }
-
-/**
- * Returns true if another app is currently producing audio. Only reliable on
- * native; web returns false (no platform API). Used at cold-start to decide
- * whether to begin our own playback or yield.
- */
-export async function isOtherAudioPlaying(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
-  try {
-    const status = await AudioModule.getStatusAsync();
-    return status?.isOtherAudioPlaying === true;
-  } catch {
-    return false;
-  }
-}
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -404,7 +383,7 @@ Run:
 ```
 npm test -- --silent src/audio/__tests__/audioSession.test.ts
 ```
-Expected: 4 tests passing.
+Expected: 2 tests passing.
 
 - [ ] **Step 5: Commit**
 
@@ -594,7 +573,7 @@ describe('BackgroundMusicProvider — cold start', () => {
     AsyncStorage.clear();
   });
 
-  test('with manifest and no other audio playing, calls play() once', async () => {
+  test('with manifest and no persisted mute, creates a player and calls play() once', async () => {
     render(
       <BackgroundMusicProvider tracksOverride={fakeTracks}>
         <Text>child</Text>
@@ -602,11 +581,11 @@ describe('BackgroundMusicProvider — cold start', () => {
     );
     await flush();
     expect(createAudioPlayer).toHaveBeenCalledTimes(1);
-    expect(__lastPlayer.current?.load).toHaveBeenCalledTimes(1);
+    // createAudioPlayer auto-loads the source; no separate load() call.
     expect(__lastPlayer.current?.play).toHaveBeenCalledTimes(1);
   });
 
-  test('with persisted muted=true, loads but does NOT play', async () => {
+  test('with persisted muted=true, creates the player but does NOT play', async () => {
     await AsyncStorage.setItem('@sulat:bgmuted', 'true');
     render(
       <BackgroundMusicProvider tracksOverride={fakeTracks}>
@@ -614,22 +593,15 @@ describe('BackgroundMusicProvider — cold start', () => {
       </BackgroundMusicProvider>
     );
     await flush();
-    expect(__lastPlayer.current?.load).toHaveBeenCalledTimes(1);
+    expect(createAudioPlayer).toHaveBeenCalledTimes(1);
     expect(__lastPlayer.current?.play).not.toHaveBeenCalled();
   });
-
-  test('when isOtherAudioPlaying returns true, does NOT play and does NOT flip mute', async () => {
-    (AudioModule.getStatusAsync as jest.Mock).mockResolvedValueOnce({ isOtherAudioPlaying: true });
-    render(
-      <BackgroundMusicProvider tracksOverride={fakeTracks}>
-        <Probe />
-      </BackgroundMusicProvider>
-    );
-    await flush();
-    expect(createAudioPlayer).not.toHaveBeenCalled();
-    expect(screen.getByTestId('probe').props.children).toBe('yes');
-  });
 });
+```
+
+Also update the imports at the top of the test file to drop `AudioModule` (no longer used):
+```tsx
+import { __lastPlayer, createAudioPlayer } from 'expo-audio';
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -649,7 +621,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer } from 'expo-audio';
 import { TRACKS, Track } from './tracks';
 import { createBag, drawNext } from './shuffleBag';
-import { configureAudioSession, isOtherAudioPlaying } from './audioSession';
+import { configureAudioSession } from './audioSession';
 import { BackgroundMusicContext, BackgroundMusicAPI } from './useBackgroundMusic';
 
 const MUTE_STORAGE_KEY = '@sulat:bgmuted';
@@ -673,7 +645,6 @@ export function BackgroundMusicProvider({
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
   const bagRef = useRef<string[]>([]);
-  const wasYieldingAtStartRef = useRef(false);
 
   // Cold-start effect.
   useEffect(() => {
@@ -686,36 +657,27 @@ export function BackgroundMusicProvider({
       if (cancelled) return;
       setIsMuted(muted);
 
-      // 2. Configure audio session.
+      // 2. Configure audio session (mixWithOthers — see audioSession.ts).
       await configureAudioSession();
-
-      // 3. Check yield.
-      const yielding = await isOtherAudioPlaying();
       if (cancelled) return;
-      if (yielding) {
-        wasYieldingAtStartRef.current = true;
-        return; // Stay silent; user can unmute to take over.
-      }
 
-      // 4. Init bag and draw first track.
+      // 3. Init bag and draw first track.
       bagRef.current = createBag(tracks.map((t) => t.id));
       const { next, remaining } = drawNext(bagRef.current);
       bagRef.current = remaining;
       const track = tracks.find((t) => t.id === next)!;
 
-      // 5. Create player, load track.
+      // 4. Create player (this also starts loading the source).
       const player = createAudioPlayer(track.source);
       playerRef.current = player;
-      await player.load(track.source);
-      if (cancelled) return;
       setCurrentTrackId(next);
 
-      // 6. Play unless muted.
+      // 5. Play unless muted. (Volume management arrives in Task 9.)
       if (!muted) player.play();
     })();
     return () => {
       cancelled = true;
-      playerRef.current?.unload();
+      playerRef.current?.remove();
     };
   }, [isAudioAvailable]);
 
@@ -814,21 +776,6 @@ describe('BackgroundMusicProvider — mute toggle', () => {
     expect(__lastPlayer.current?.play).toHaveBeenCalledTimes(1);
     expect(await AsyncStorage.getItem('@sulat:bgmuted')).toBe('false');
   });
-
-  test('unmute from yielding state starts a fresh track', async () => {
-    (AudioModule.getStatusAsync as jest.Mock).mockResolvedValueOnce({ isOtherAudioPlaying: true });
-    render(
-      <BackgroundMusicProvider tracksOverride={fakeTracks}>
-        <MuteButton />
-      </BackgroundMusicProvider>
-    );
-    await flush();
-    expect(__lastPlayer.current).toBeNull();
-    fireEvent.press(screen.getByTestId('mute-btn'));
-    await flush();
-    expect(createAudioPlayer).toHaveBeenCalledTimes(1);
-    expect(__lastPlayer.current?.play).toHaveBeenCalledTimes(1);
-  });
 });
 ```
 
@@ -849,7 +796,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer } from 'expo-audio';
 import { TRACKS, Track } from './tracks';
 import { createBag, drawNext } from './shuffleBag';
-import { configureAudioSession, isOtherAudioPlaying } from './audioSession';
+import { configureAudioSession } from './audioSession';
 import { BackgroundMusicContext, BackgroundMusicAPI } from './useBackgroundMusic';
 
 const MUTE_STORAGE_KEY = '@sulat:bgmuted';
@@ -871,27 +818,12 @@ export function BackgroundMusicProvider({
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
   const bagRef = useRef<string[]>([]);
-  const wasYieldingAtStartRef = useRef(false);
   const lastPlayedIdRef = useRef<string | null>(null);
 
-  // Attach the natural-end listener to the player once. Track-end → setTimeout(gap) → next.
-  // The implementation body lives here as a closure so it has fresh access to the latest tracks.
-  const attachEndListener = useCallback(
-    (player: ReturnType<typeof createAudioPlayer>) => {
-      player.addListener((status) => {
-        if (status.didJustFinish) {
-          setCurrentTrackId(null);
-          setTimeout(() => {
-            startNextFromBag(); // hoisted below — safe at call time
-          }, trackGapMs);
-        }
-      });
-    },
-    [trackGapMs] // eslint-disable-line react-hooks/exhaustive-deps -- startNextFromBag closure stable via refs
-  );
-
-  // Helper: load + start a fresh track from the bag.
-  const startNextFromBag = useCallback(async () => {
+  // Helper: swap to the next track from the bag and play it.
+  // Re-used by both the natural-end listener (Task 8 wires the listener) and skipTrack.
+  const startNextFromBag = useCallback(() => {
+    if (!playerRef.current) return;
     if (bagRef.current.length === 0) {
       bagRef.current = createBag(
         tracks.map((t) => t.id),
@@ -901,17 +833,27 @@ export function BackgroundMusicProvider({
     const { next, remaining } = drawNext(bagRef.current);
     bagRef.current = remaining;
     const track = tracks.find((t) => t.id === next)!;
-    let createdPlayer = false;
-    if (!playerRef.current) {
-      playerRef.current = createAudioPlayer(track.source);
-      createdPlayer = true;
-    }
-    await playerRef.current.load(track.source);
-    if (createdPlayer) attachEndListener(playerRef.current);
+    playerRef.current.replace(track.source);
     setCurrentTrackId(next);
     lastPlayedIdRef.current = next;
     playerRef.current.play();
-  }, [tracks, attachEndListener]);
+  }, [tracks]);
+
+  // Attach the natural-end listener once when a player is created.
+  // Track-end → setTimeout(gap) → next-track via startNextFromBag.
+  const attachEndListener = useCallback(
+    (player: ReturnType<typeof createAudioPlayer>) => {
+      player.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
+          setCurrentTrackId(null);
+          setTimeout(() => {
+            startNextFromBag();
+          }, trackGapMs);
+        }
+      });
+    },
+    [trackGapMs, startNextFromBag]
+  );
 
   // Cold-start effect.
   useEffect(() => {
@@ -924,30 +866,24 @@ export function BackgroundMusicProvider({
       setIsMuted(muted);
 
       await configureAudioSession();
-
-      const yielding = await isOtherAudioPlaying();
       if (cancelled) return;
-      if (yielding) {
-        wasYieldingAtStartRef.current = true;
-        return;
-      }
 
       bagRef.current = createBag(tracks.map((t) => t.id));
       const { next, remaining } = drawNext(bagRef.current);
       bagRef.current = remaining;
       const track = tracks.find((t) => t.id === next)!;
+
       const player = createAudioPlayer(track.source);
       playerRef.current = player;
       attachEndListener(player);
-      await player.load(track.source);
-      if (cancelled) return;
       setCurrentTrackId(next);
       lastPlayedIdRef.current = next;
+
       if (!muted) player.play();
     })();
     return () => {
       cancelled = true;
-      playerRef.current?.unload();
+      playerRef.current?.remove();
     };
   }, [isAudioAvailable, tracks, attachEndListener]);
 
@@ -958,17 +894,11 @@ export function BackgroundMusicProvider({
       if (next) {
         playerRef.current?.pause();
       } else {
-        if (wasYieldingAtStartRef.current) {
-          wasYieldingAtStartRef.current = false;
-          bagRef.current = createBag(tracks.map((t) => t.id));
-          startNextFromBag();
-        } else {
-          playerRef.current?.play();
-        }
+        playerRef.current?.play();
       }
       return next;
     });
-  }, [startNextFromBag, tracks]);
+  }, []);
 
   const currentTrackName = currentTrackId
     ? tracks.find((t) => t.id === currentTrackId)?.displayName ?? null
@@ -1036,7 +966,7 @@ describe('BackgroundMusicProvider — track end and skip', () => {
     AsyncStorage.clear();
   });
 
-  test('on track end (with trackGapMs=0), advances to next track', async () => {
+  test('on track end (with trackGapMs=0), advances to next track via replace()', async () => {
     render(
       <BackgroundMusicProvider tracksOverride={fakeTracks} trackGapMs={0}>
         <Text>x</Text>
@@ -1044,13 +974,14 @@ describe('BackgroundMusicProvider — track end and skip', () => {
     );
     await flush();
     const player = __lastPlayer.current!;
-    expect(player.load).toHaveBeenCalledTimes(1);
+    // createAudioPlayer auto-loads the first track — no replace() yet.
+    expect(player.replace).toHaveBeenCalledTimes(0);
+    expect(player.play).toHaveBeenCalledTimes(1);
     player.__emitFinish();
-    // setTimeout(0) fires on the next macrotask; await one resolved promise
-    // plus a setImmediate-equivalent. Two flushes are sufficient under jest-expo.
+    // setTimeout(0) fires on the next macrotask; flushes drain the chain.
     await flush();
     await flush();
-    expect(player.load).toHaveBeenCalledTimes(2);
+    expect(player.replace).toHaveBeenCalledTimes(1);
     expect(player.play).toHaveBeenCalledTimes(2);
   });
 
@@ -1062,10 +993,10 @@ describe('BackgroundMusicProvider — track end and skip', () => {
     );
     await flush();
     const player = __lastPlayer.current!;
-    expect(player.load).toHaveBeenCalledTimes(1);
+    expect(player.replace).toHaveBeenCalledTimes(0);
     fireEvent.press(screen.getByTestId('skip-btn'));
     await flush();
-    expect(player.load).toHaveBeenCalledTimes(2);
+    expect(player.replace).toHaveBeenCalledTimes(1);
   });
 });
 ```
@@ -1158,9 +1089,9 @@ describe('BackgroundMusicProvider — duck/unduck', () => {
     await flush();
     const player = __lastPlayer.current!;
     fireEvent.press(screen.getByTestId('duck-btn'));
-    expect(player.setVolume).toHaveBeenLastCalledWith(0.3);
+    expect(player.volume).toBe(0.3);
     fireEvent.press(screen.getByTestId('unduck-btn'));
-    expect(player.setVolume).toHaveBeenLastCalledWith(1.0);
+    expect(player.volume).toBe(1.0);
   });
 
   test('mute + duck + unduck keeps effective volume at 0', async () => {
@@ -1174,9 +1105,9 @@ describe('BackgroundMusicProvider — duck/unduck', () => {
     fireEvent.press(screen.getByTestId('mute-btn'));
     await flush();
     fireEvent.press(screen.getByTestId('duck-btn'));
-    expect(player.setVolume).toHaveBeenLastCalledWith(0);
+    expect(player.volume).toBe(0);
     fireEvent.press(screen.getByTestId('unduck-btn'));
-    expect(player.setVolume).toHaveBeenLastCalledWith(0);
+    expect(player.volume).toBe(0);
   });
 });
 ```
@@ -1207,7 +1138,7 @@ In `src/audio/BackgroundMusicProvider.tsx`, **place these new declarations immed
   const applyEffectiveVolume = useCallback((mutedOverride?: boolean) => {
     const muted = mutedOverride ?? isMutedRef.current;
     const v = muted ? 0 : duckLevelRef.current * webUnlockGainRef.current;
-    playerRef.current?.setVolume(v);
+    if (playerRef.current) playerRef.current.volume = v; // property assignment, not method call
   }, []); // stable — reads state via refs
 
   const duck = useCallback(() => {
@@ -1253,7 +1184,7 @@ Update the `value` memo to wire `duck` and `unduck`:
   );
 ```
 
-**Why the tests pass:** the `webUnlockGainRef` initializer (above) starts at `1` whenever `tracksOverride` is passed (test mode) or when there's no `document` (native). The duck/unduck assertions then see real volume values: `setVolume(0.3)` from `duck()` and `setVolume(1.0)` from `unduck()`. Production code paths (no `tracksOverride`, real browser) still start at `0` and are unlocked by Task 11's pointerdown listener.
+**Why the tests pass:** the `webUnlockGainRef` initializer (above) starts at `1` whenever `tracksOverride` is passed (test mode) or when there's no `document` (native). The duck/unduck assertions then see real volume values: `player.volume = 0.3` after `duck()` and `player.volume = 1.0` after `unduck()`. Production code paths (no `tracksOverride`, real browser) still start at `0` and are unlocked by Task 11's pointerdown listener.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -1424,25 +1355,44 @@ In `src/audio/BackgroundMusicProvider.tsx`, add this effect after the cold-start
   }, [isAudioAvailable, applyEffectiveVolume]);
 ```
 
-In the cold-start effect, set the effective volume immediately after load (before `player.play()`) so the initial volume is correct on web:
+In the cold-start effect, set the effective volume right after creating the player (before `player.play()`) so the initial volume is correct on web:
 
 Replace this block in the cold-start effect:
 ```tsx
-      await player.load(track.source);
-      if (cancelled) return;
+      const player = createAudioPlayer(track.source);
+      playerRef.current = player;
+      attachEndListener(player);
       setCurrentTrackId(next);
       lastPlayedIdRef.current = next;
+
       if (!muted) player.play();
 ```
 
 with:
 ```tsx
-      await player.load(track.source);
-      if (cancelled) return;
+      const player = createAudioPlayer(track.source);
+      playerRef.current = player;
+      attachEndListener(player);
       setCurrentTrackId(next);
       lastPlayedIdRef.current = next;
+
       applyEffectiveVolume(muted);
       if (!muted) player.play();
+```
+
+Also, inside `startNextFromBag`, set the volume after `player.replace()` so each new track starts at the right volume:
+
+```tsx
+    playerRef.current.replace(track.source);
+    setCurrentTrackId(next);
+    lastPlayedIdRef.current = next;
+    applyEffectiveVolume(); // keep effective volume across track changes
+    playerRef.current.play();
+```
+
+Add `applyEffectiveVolume` to `startNextFromBag`'s deps array:
+```tsx
+  }, [tracks, applyEffectiveVolume]);
 ```
 
 Add `applyEffectiveVolume` to the cold-start `useEffect` deps array:
@@ -1743,8 +1693,7 @@ Open `http://localhost:8081` (or the existing preview URL) in a fresh browser ta
 - [ ] **Step 6: Yield verification (web)**
 
 - Open a YouTube tab and start a video.
-- Reload Sulat. Confirm Sulat does NOT take over audio (yields). The speaker icon may still show `volume-high` because we don't auto-mute — tapping it should start Sulat's music.
-- (Note: the `isOtherAudioPlaying` check returns `false` on web by design — this verification is a soft check; the real yield behavior is on native.)
+- Reload Sulat. With `interruptionMode: 'mixWithOthers'` configured, Sulat will play *alongside* the YouTube tab — both audible. This is intentional (see spec's "Audio focus follow-up"). User can mute Sulat with the speaker icon. The first launch is the only time both can collide; the muted state persists.
 
 - [ ] **Step 7: Native verification (Pixel 7 emulator) — DEFERRED PER HANDOFF**
 
@@ -1765,6 +1714,6 @@ If no manifest edits were needed (user pre-populated), no commit.
 
 Spec coverage check:
 - All locked decisions from the spec table → mapped to specific tasks (Tasks 6–11).
-- Edge cases from the spec's Edge Cases section → covered in tests (Tasks 5–10) and the resilient implementation (try/catch in `Player.load`, `lastAppState` ref, orthogonal volume formula).
+- Edge cases from the spec's Edge Cases section → covered in tests (Tasks 5–10) and the resilient implementation (try/catch around `player.replace`, `lastAppState` ref, orthogonal volume formula).
 - Testing section's unit + integration counts → met by Tasks 2 (5 unit tests for shuffleBag) + Tasks 5–10 (15 integration tests for the provider). Audio session adds 4 more. Total ~24 new tests, slightly above the spec's ~22 estimate.
 - Manual verification list from the spec → mapped to Task 16 substeps.

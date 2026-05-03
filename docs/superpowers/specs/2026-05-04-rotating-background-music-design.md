@@ -16,7 +16,7 @@ Sulat's current main view is silent. The aesthetic — gold lantern accents, han
 | Default state | On by default; mute is a persistent state remembered across launches |
 | First-launch picker | Random first track |
 | Rotation | Shuffle bag (no repeats until bag empty, then reshuffle) |
-| Audio focus | Yield to existing audio (Sulat stays silent if other audio is playing) |
+| Audio focus | Mix with other audio (`mixWithOthers` interruption mode — Sulat plays alongside whatever else is going). See "Audio focus follow-up" below. |
 | Background behavior | Pause on background, resume on return |
 | Track-to-track transition | 1–2s short silence |
 | ComposeSheet | Duck to ~30% volume while open, restore on close |
@@ -71,6 +71,12 @@ type BackgroundMusicAPI = {
 };
 ```
 
+### Audio focus follow-up
+
+The original brainstorm answer ("yield to existing audio — Sulat stays silent if Spotify is playing") cannot be implemented through `expo-audio` 1.x's public API. There is no method to query whether another app is producing audio, so a true yield can't be conditionally triggered. The closest behavior the platform supports cleanly is `interruptionMode: 'mixWithOthers'`, where Sulat coexists with other audio sources.
+
+Trade-off: if a user opens Sulat while a podcast or song is already playing in another app, both will play simultaneously. The mitigation is the persistent mute toggle — one tap silences Sulat, and the choice persists across launches. A future enhancement could ship a custom native module that queries `AVAudioSession.secondaryAudioShouldBeSilencedHint` (iOS) or Android `AudioManager.isMusicActive()` to recover the original yield behavior.
+
 ## Components
 
 ### `tracks.ts`
@@ -104,34 +110,34 @@ export function drawNext(
 
 ```ts
 export async function configureAudioSession(): Promise<void>;
-export async function isOtherAudioPlaying(): Promise<boolean>;
 ```
 
 Platform behavior:
 
-- **iOS:** category `AVAudioSessionCategoryAmbient` — mixes with other audio, respects the silent switch. Yield is automatic at the OS level.
-- **Android:** `interruptionMode: DoNotMix`. Provider calls `isOtherAudioPlaying()` on mount and skips the initial play if true.
-- **Web:** no session config; the unlock flow is handled in the provider via `volume=0` + first-pointerdown ramp.
+- **iOS / Android (native):** calls `setAudioModeAsync({ playsInSilentMode: false, shouldPlayInBackground: false, interruptionMode: 'mixWithOthers' })`. Sulat coexists with whatever other audio is playing (no audio-focus request on Android, ambient-style mixing on iOS).
+- **Web:** no-op. The autoplay unlock flow is handled in the provider via `volume=0` + first-pointerdown ramp.
+
+There is no `isOtherAudioPlaying` helper — `expo-audio` 1.x has no public API to query other apps' audio state. See "Audio focus follow-up" above.
 
 ### `BackgroundMusicProvider.tsx`
 
 Owns:
 
-- A single `expo-audio` Player instance (reused — load swaps the source rather than allocating new players per track).
+- A single `expo-audio` `AudioPlayer` instance (reused — `player.replace(source)` swaps the source rather than allocating new players per track).
 - `isMuted` (mirrored from AsyncStorage key `@sulat:bgmuted`).
 - `currentTrackId`, `bag` (in-memory only, no persistence).
 - `duckLevel` (1.0 normal, 0.3 when ComposeSheet open).
 - `webUnlockGain` (0 until first pointerdown on web, then 1).
 - `isLoading` ref (guards skip-during-load races).
 
-Effective volume = `isMuted ? 0 : (duckLevel * webUnlockGain)`.
+Effective volume = `isMuted ? 0 : (duckLevel * webUnlockGain)`. Set via `player.volume = effectiveVolume` (it's a writable property on `AudioPlayer`, not a method call).
 
 Effects:
 
-- **On mount:** read AsyncStorage → `configureAudioSession()` → check `isOtherAudioPlaying()` → init bag → load first track → play (or stay paused if muted/yielding).
+- **On mount:** read AsyncStorage → `configureAudioSession()` → init bag → `createAudioPlayer(firstTrack.source)` (already loads) → set volume → `play()` unless muted.
 - **AppState listener:** `active` → resume if was-playing; `background`/`inactive` → pause. Guard double-fires with a `lastAppState` ref.
-- **Player `playbackStatusUpdate`:** `didJustFinish === true` → 1500ms timer → `drawNext` → load + play.
-- **On unmount:** unload player, remove listeners.
+- **Player listener (`addListener('playbackStatusUpdate', ...)`):** when `status.didJustFinish === true` → 1500ms timer → `drawNext` → `player.replace(nextSource)` → set volume → `play`.
+- **On unmount:** `player.remove()` to free native resources, plus remove the AppState subscription.
 
 ### `useBackgroundMusic.ts`
 
@@ -143,11 +149,12 @@ Thin `useContext` wrapper. Throws a clear error if used outside the provider. Re
 
 1. Provider mounts.
 2. Read `@sulat:bgmuted`. `null` → default `false`.
-3. `configureAudioSession()`.
-4. `isOtherAudioPlaying()`. If true → set `wasYieldingAtStart = true`; do not start a track. The speaker icon shows as muted; tapping it starts our music.
-5. If muted (and not yielding) → `createBag(allTrackIds)` → `drawNext(bag)` → `Player.load(source)` but do **not** call `play()`. Pre-loading means the first un-mute is instant.
-6. If unmuted (and not yielding) → `createBag(allTrackIds)` → `drawNext(bag)` → `Player.load(source).play()`.
-7. **Web only:** Player is created with `volume=0` regardless. A one-time `document.addEventListener('pointerdown', unlock, { once: true })` ramps `webUnlockGain` from 0 to 1.
+3. `configureAudioSession()` (sets `mixWithOthers`).
+4. `createBag(allTrackIds)` → `drawNext(bag)` → `createAudioPlayer(firstTrack.source)` (which already starts loading internally).
+5. Attach `playbackStatusUpdate` listener for natural-end → next-track transitions.
+6. Set `player.volume = effectiveVolume` (computed via the formula above).
+7. If unmuted, call `player.play()`. If muted, leave the player paused — the source is already loaded so the first un-mute is instant.
+8. **Web only:** `webUnlockGain` starts at `0`, so effective volume is `0` regardless of mute state until the first user gesture. A one-time `document.addEventListener('pointerdown', unlock, { once: true })` ramps `webUnlockGain` from 0 to 1 on first tap and re-applies the volume.
 
 ### Track ends naturally
 
@@ -155,7 +162,7 @@ Thin `useContext` wrapper. Throws a clear error if used outside the provider. Re
 2. Set `currentTrackId = null` (UI shows "—" briefly).
 3. `setTimeout` 1500ms.
 4. `drawNext(bag, lastPlayedId)`. If `bag.empty`, `createBag()` and draw again.
-5. `Player.load(nextSource).play()`. Update `currentTrackId`.
+5. `player.replace(nextSource)` → set volume → `player.play()`. Update `currentTrackId`.
 
 ### Skip pressed
 
@@ -165,13 +172,13 @@ Same as natural end, but no 1500ms delay — instant transition. The breathing p
 
 1. Flip `isMuted`.
 2. Persist to AsyncStorage.
-3. Muting → `Player.pause()` (track position retained for resume).
-4. Unmuting from `wasYieldingAtStart === true` → init bag → draw → load → play. Clear the yielding flag.
-5. Unmuting normally → `Player.play()` resumes from saved position.
+3. Recompute `player.volume` via the effective-volume formula.
+4. Muting → `player.pause()` (track position retained for resume).
+5. Unmuting → `player.play()` resumes from saved position.
 
 ### ComposeSheet duck
 
-`useEffect(() => { duck(); return () => unduck(); }, [])` inside `ComposeSheet.tsx`. The hook calls `setVolume(0.3 * webUnlockGain)` on mount and `setVolume(1.0 * webUnlockGain)` on unmount. No fade ramp in v1; instant volume change.
+`useEffect(() => { duck(); return () => unduck(); }, [])` inside `ComposeSheet.tsx`. The hook flips `duckLevel` between `0.3` and `1.0` and reapplies effective volume via `player.volume = effectiveVolume`. No fade ramp in v1; instant volume change.
 
 ### AppState transitions
 
@@ -198,7 +205,7 @@ No other existing files are touched. `useStories`, `useClusters`, the draft stat
 
 - **Bundled assets are guaranteed-present.** Wrong `require()` paths fail at Metro bundle time, not runtime — no "file not found" runtime handler.
 - **Empty manifest.** `tracks.ts` exporting `[]` flips `isAudioAvailable === false`. Provider exposes the API as no-ops; the speaker icon hides itself; one dev-mode warning logged.
-- **`Player.load()` failure.** Wrapped in try/catch. On error: log, advance to the next track in the bag (one retry). If retry also fails, fall back to muted state silently.
+- **`player.replace()` failure.** Wrapped in try/catch. On error: log, advance to the next track in the bag (one retry). If retry also fails, fall back to muted state silently.
 - **AppState double-fires.** A `lastAppState` ref guards against acting on `active → active` or rapid bounces (which happen during permission prompts, screen rotation, push notification taps).
 - **Mute + duck race.** Effective volume formula `isMuted ? 0 : (duckLevel * webUnlockGain)` keeps the gates orthogonal. Closing ComposeSheet while muted calls `unduck()` → `duckLevel = 1.0` → effective volume stays 0 because `isMuted` still true. Correct.
 - **Web autoplay unlock fires before player ready.** Defensive `pendingUnlock` flag applies the volume bump once the player initializes. Unlikely in practice (provider mounts in `_layout`).
@@ -220,11 +227,10 @@ No other existing files are touched. `useStories`, `useClusters`, the draft stat
 
 - Empty manifest → `isAudioAvailable === false`, no warnings in test mode.
 - Mute persisted as `'true'` → `isMuted === true` after first render, no `play()` call.
-- Unmuted, no other audio → `play()` called once.
-- Unmuted, `isOtherAudioPlaying === true` → `play()` NOT called, `isMuted === false` (we yield, we don't flip mute).
+- Unmuted → `play()` called once after the player is created.
 - `toggleMute()` writes to AsyncStorage and pauses/plays the mock player.
-- `skipTrack()` advances bag and triggers a load on the mock.
-- `duck()` then `unduck()` calls `setVolume(0.3)` then `setVolume(1.0)` on the mock.
+- `skipTrack()` advances bag and triggers `replace()` on the mock player.
+- `duck()` then `unduck()` set `player.volume` to `0.3` then `1.0` on the mock.
 - Mute while ducked + then unduck → effective volume stays 0 (the orthogonal-gates property from edge cases).
 - AppState `background` → `pause()` called; `active` → `play()` called.
 
@@ -237,7 +243,7 @@ No other existing files are touched. `useStories`, `useClusters`, the draft stat
 ### Manual verification (will be in the implementation plan, not unit tests)
 
 - Web at `sulat.vercel.app`: open in a fresh browser → no audio until first tap → audio after first tap → mute persists across reload → pause on tab-switch (`visibilitychange`).
-- Native on Pixel 7 emulator: audio plays on launch → pause on home button → resume on return → yield when Spotify is already playing.
+- Native on Pixel 7 emulator: audio plays on launch → pause on home button → resume on return → mixes with Spotify if Spotify is already playing (both audible — known behavior, not a yield).
 - ComposeSheet: tap +, confirm music ducks; close sheet, confirm music returns; do it while muted to confirm no audible change.
 
 ### Test count target
