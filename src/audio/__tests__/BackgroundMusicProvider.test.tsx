@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { Text, Pressable } from 'react-native';
 import { BackgroundMusicProvider } from '../BackgroundMusicProvider';
 import { useBackgroundMusic } from '../useBackgroundMusic';
 import { __lastPlayer, createAudioPlayer } from 'expo-audio';
@@ -20,6 +20,15 @@ async function flush() {
 function Probe() {
   const api = useBackgroundMusic();
   return <Text testID="probe">{api.isAudioAvailable ? 'yes' : 'no'}</Text>;
+}
+
+function MuteButton() {
+  const api = useBackgroundMusic();
+  return (
+    <Pressable testID="mute-btn" onPress={api.toggleMute}>
+      <Text>{api.isMuted ? 'muted' : 'unmuted'}</Text>
+    </Pressable>
+  );
 }
 
 describe('BackgroundMusicProvider — empty manifest', () => {
@@ -68,5 +77,40 @@ describe('BackgroundMusicProvider — cold start', () => {
     await flush();
     expect(createAudioPlayer).toHaveBeenCalledTimes(1);
     expect(__lastPlayer.current?.play).not.toHaveBeenCalled();
+  });
+});
+
+describe('BackgroundMusicProvider — mute toggle', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    __lastPlayer.current = null;
+    AsyncStorage.clear();
+  });
+
+  test('toggleMute pauses player and persists muted=true', async () => {
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <MuteButton />
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    fireEvent.press(screen.getByTestId('mute-btn'));
+    await flush();
+    expect(__lastPlayer.current?.pause).toHaveBeenCalledTimes(1);
+    expect(await AsyncStorage.getItem('@sulat:bgmuted')).toBe('true');
+  });
+
+  test('toggleMute when already muted resumes playback and persists muted=false', async () => {
+    await AsyncStorage.setItem('@sulat:bgmuted', 'true');
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <MuteButton />
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    fireEvent.press(screen.getByTestId('mute-btn'));
+    await flush();
+    expect(__lastPlayer.current?.play).toHaveBeenCalledTimes(1);
+    expect(await AsyncStorage.getItem('@sulat:bgmuted')).toBe('false');
   });
 });

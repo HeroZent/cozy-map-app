@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer } from 'expo-audio';
 import { TRACKS, Track } from './tracks';
@@ -10,9 +10,7 @@ const MUTE_STORAGE_KEY = '@sulat:bgmuted';
 
 export type BackgroundMusicProviderProps = {
   children: ReactNode;
-  /** TEST ONLY. Replaces the bundled TRACKS manifest. */
   tracksOverride?: Track[];
-  /** TEST ONLY. Overrides the natural-end pause between tracks. Default 1500ms. */
   trackGapMs?: number;
 };
 
@@ -27,41 +25,87 @@ export function BackgroundMusicProvider({
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
   const bagRef = useRef<string[]>([]);
+  const lastPlayedIdRef = useRef<string | null>(null);
+
+  // Helper: swap to the next track from the bag and play it.
+  // Re-used by both the natural-end listener (Task 8 wires the listener) and skipTrack.
+  const startNextFromBag = useCallback(() => {
+    if (!playerRef.current) return;
+    if (bagRef.current.length === 0) {
+      bagRef.current = createBag(
+        tracks.map((t) => t.id),
+        lastPlayedIdRef.current ?? undefined
+      );
+    }
+    const { next, remaining } = drawNext(bagRef.current);
+    bagRef.current = remaining;
+    const track = tracks.find((t) => t.id === next)!;
+    playerRef.current.replace(track.source);
+    setCurrentTrackId(next);
+    lastPlayedIdRef.current = next;
+    playerRef.current.play();
+  }, [tracks]);
+
+  // Attach the natural-end listener once when a player is created.
+  // Track-end → setTimeout(gap) → next-track via startNextFromBag.
+  const attachEndListener = useCallback(
+    (player: ReturnType<typeof createAudioPlayer>) => {
+      player.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
+          setCurrentTrackId(null);
+          setTimeout(() => {
+            startNextFromBag();
+          }, trackGapMs);
+        }
+      });
+    },
+    [trackGapMs, startNextFromBag]
+  );
 
   // Cold-start effect.
   useEffect(() => {
     if (!isAudioAvailable) return;
     let cancelled = false;
     (async () => {
-      // 1. Read persisted mute.
       const persisted = await AsyncStorage.getItem(MUTE_STORAGE_KEY);
       const muted = persisted === 'true';
       if (cancelled) return;
       setIsMuted(muted);
 
-      // 2. Configure audio session (mixWithOthers — see audioSession.ts).
       await configureAudioSession();
       if (cancelled) return;
 
-      // 3. Init bag and draw first track.
       bagRef.current = createBag(tracks.map((t) => t.id));
       const { next, remaining } = drawNext(bagRef.current);
       bagRef.current = remaining;
       const track = tracks.find((t) => t.id === next)!;
 
-      // 4. Create player (this also starts loading the source).
       const player = createAudioPlayer(track.source);
       playerRef.current = player;
+      attachEndListener(player);
       setCurrentTrackId(next);
+      lastPlayedIdRef.current = next;
 
-      // 5. Play unless muted. (Volume management arrives in Task 9.)
       if (!muted) player.play();
     })();
     return () => {
       cancelled = true;
       playerRef.current?.remove();
     };
-  }, [isAudioAvailable]);
+  }, [isAudioAvailable, tracks, attachEndListener]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => {
+      const next = !prev;
+      AsyncStorage.setItem(MUTE_STORAGE_KEY, String(next));
+      if (next) {
+        playerRef.current?.pause();
+      } else {
+        playerRef.current?.play();
+      }
+      return next;
+    });
+  }, []);
 
   const currentTrackName = currentTrackId
     ? tracks.find((t) => t.id === currentTrackId)?.displayName ?? null
@@ -70,14 +114,14 @@ export function BackgroundMusicProvider({
   const value = useMemo<BackgroundMusicAPI>(
     () => ({
       isMuted,
-      toggleMute: () => {}, // implemented in Task 7
-      skipTrack: () => {},  // implemented in Task 8
-      duck: () => {},       // implemented in Task 9
-      unduck: () => {},     // implemented in Task 9
+      toggleMute,
+      skipTrack: () => {},
+      duck: () => {},
+      unduck: () => {},
       currentTrackName,
       isAudioAvailable,
     }),
-    [isMuted, currentTrackName, isAudioAvailable]
+    [isMuted, toggleMute, currentTrackName, isAudioAvailable]
   );
 
   return (
