@@ -17,3 +17,6 @@ jest.mock('expo-secure-store', () => ({
     return Promise.resolve();
   }),
 }));
+
+// Auto-mock expo-audio for all tests; use __mocks__/expo-audio.ts.
+jest.mock('expo-audio');
