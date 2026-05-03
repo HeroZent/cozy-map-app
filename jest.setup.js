@@ -20,3 +20,8 @@ jest.mock('expo-secure-store', () => ({
 
 // Auto-mock expo-audio for all tests; use __mocks__/expo-audio.ts.
 jest.mock('expo-audio');
+
+// Mock AsyncStorage with the official in-memory mock.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
