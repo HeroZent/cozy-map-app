@@ -141,7 +141,10 @@ export default function Home() {
       {/* Map fills entire screen — loaded lazily so the app shell renders first */}
       <Suspense fallback={<MapSkeleton />}>
         <LazyMapView
-          onDoubleClick={(loc) => openCompose({ lat: loc.lat, lng: loc.lng })}
+          onDoubleClick={(loc) => {
+            closeAllSheets();
+            setDraftPhase({ kind: 'placing', coords: { lat: loc.lat, lng: loc.lng } });
+          }}
           flyTarget={flyTarget}
         >
           {heatmapOn && <HeatmapLayer stories={stories} />}
