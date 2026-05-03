@@ -18,6 +18,7 @@ import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
 import { ComposeCard } from './ComposeCard';
 import { checkCrisis } from '@/moderation/crisisTripwire';
 import { HotlineOverlay } from '@/moderation/HotlineOverlay';
+import { useBackgroundMusic } from '@/audio/useBackgroundMusic';
 
 const MAX_CHARS = 500;
 
@@ -33,6 +34,13 @@ export function ComposeSheet({ coords, onClose, onPosted, bottomOffset = 0 }: Co
   const theme = useTheme();
   const sheetRef = useRef<AnimatedSheetRef>(null);
   const create = useCreateStory();
+  const bgMusic = useBackgroundMusic();
+
+  // Duck background music while the sheet is open so the user can think.
+  useEffect(() => {
+    bgMusic.duck();
+    return () => bgMusic.unduck();
+  }, [bgMusic]);
 
   const [selectedMood, setSelectedMood] = useState<Mood>('on_my_mind');
   const [body, setBody] = useState('');

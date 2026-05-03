@@ -36,6 +36,18 @@ jest.mock('@/moderation/crisisTripwire', () => ({
   checkCrisis: jest.fn(),
 }));
 
+jest.mock('@/audio/useBackgroundMusic', () => ({
+  useBackgroundMusic: () => ({
+    isMuted: false,
+    toggleMute: jest.fn(),
+    skipTrack: jest.fn(),
+    duck: jest.fn(),
+    unduck: jest.fn(),
+    currentTrackName: null,
+    isAudioAvailable: false,
+  }),
+}));
+
 jest.mock('@/moderation/HotlineOverlay', () => ({
   HotlineOverlay: ({
     visible,
