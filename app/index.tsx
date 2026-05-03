@@ -61,8 +61,12 @@ export default function Home() {
     if (updated) setSelectedStory(updated);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stories]); // intentionally omit selectedStory — only run when stories changes
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [composeCoords, setComposeCoords] = useState<{ lat: number; lng: number } | undefined>();
+  type DraftPhase =
+    | { kind: 'idle' }
+    | { kind: 'placing'; coords: { lat: number; lng: number } }
+    | { kind: 'composing'; coords: { lat: number; lng: number } };
+
+  const [draftPhase, setDraftPhase] = useState<DraftPhase>({ kind: 'idle' });
   const [lanternOpen, setLanternOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -94,7 +98,7 @@ export default function Home() {
 
   const closeAllSheets = () => {
     setSelectedStory(null);
-    setComposeOpen(false);
+    setDraftPhase({ kind: 'idle' });
     setLanternOpen(false);
     setSettingsOpen(false);
     setProfileOpen(false);
@@ -114,8 +118,13 @@ export default function Home() {
 
   const openCompose = (coords?: { lat: number; lng: number }) => {
     closeAllSheets();
-    setComposeCoords(coords);
-    setComposeOpen(true);
+    if (coords) {
+      setDraftPhase({ kind: 'composing', coords });
+    } else {
+      // No coords yet → caller will populate via a later trigger.
+      // For now, the FAB tap path lands here; Task 3 changes this to drop a pin.
+      setDraftPhase({ kind: 'composing', coords: { lat: 0, lng: 0 } });
+    }
   };
 
   const handleNearMe = async () => {
@@ -147,11 +156,13 @@ export default function Home() {
           {/* Draggable draft pin — only visible while compose is open. Lets
               the user fine-tune the post location before submitting on web.
               (Native: shown as a static pin pending drag implementation.) */}
-          {composeOpen && composeCoords && (
+          {draftPhase.kind !== 'idle' && (
             <DraftPinMarker
-              longitude={composeCoords.lng}
-              latitude={composeCoords.lat}
-              onDragEnd={(loc) => setComposeCoords(loc)}
+              longitude={draftPhase.coords.lng}
+              latitude={draftPhase.coords.lat}
+              onDragEnd={(loc) => setDraftPhase((p) =>
+                p.kind === 'idle' ? p : { kind: p.kind, coords: { lat: loc.lat, lng: loc.lng } }
+              )}
             />
           )}
         </LazyMapView>
@@ -262,11 +273,11 @@ export default function Home() {
       )}
 
       {/* Compose sheet — floats above nav bar */}
-      {composeOpen && (
+      {draftPhase.kind === 'composing' && (
         <ComposeSheet
-          coords={composeCoords}
-          onClose={() => setComposeOpen(false)}
-          onPosted={() => { setComposeOpen(false); setRefreshKey((k) => k + 1); }}
+          coords={draftPhase.coords}
+          onClose={() => setDraftPhase({ kind: 'idle' })}
+          onPosted={() => { setDraftPhase({ kind: 'idle' }); setRefreshKey((k) => k + 1); }}
           bottomOffset={NAV_HEIGHT + 10}
         />
       )}
