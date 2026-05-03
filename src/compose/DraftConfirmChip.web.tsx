@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Popup } from 'react-map-gl/maplibre';
+import './DraftConfirmChip.web.css';
 import { reverseGeocode } from '@/lib/reverseGeocode';
 import { useTheme } from '@/theme/ThemeContext';
 
@@ -61,6 +62,7 @@ export function DraftConfirmChip({ coords, onWrite, onCancel }: DraftConfirmChip
       offset={28}
       closeButton={false}
       closeOnClick={false}
+      className="draft-confirm-chip-popup"
     >
       <View style={[styles.chip, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <Text style={[styles.label, { color: theme.textPrimary }]} numberOfLines={1}>

@@ -1,0 +1,12 @@
+/* Neutralize maplibre's default Popup chrome inside the draft-confirm-chip-popup
+ * class so our own pill styling shows through cleanly. */
+.draft-confirm-chip-popup .maplibregl-popup-content {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.draft-confirm-chip-popup .maplibregl-popup-tip {
+  display: none;
+}
