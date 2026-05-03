@@ -132,6 +132,10 @@ export function BackgroundMusicProvider({
     const unlock = () => {
       webUnlockGainRef.current = 1;
       applyEffectiveVolume();
+      // Browser autoplay policy: the cold-start play() outside a gesture is
+      // rejected. Setting volume=0 doesn't exempt — only the muted property
+      // does. So we (re)play here, inside the pointerdown gesture.
+      if (!isMutedRef.current) playerRef.current?.play();
     };
     document.addEventListener('pointerdown', unlock, { once: true });
     return () => document.removeEventListener('pointerdown', unlock);
