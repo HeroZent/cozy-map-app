@@ -116,17 +116,6 @@ export default function Home() {
     setNotifSheetOpen(true);
   };
 
-  const openCompose = (coords?: { lat: number; lng: number }) => {
-    closeAllSheets();
-    if (coords) {
-      setDraftPhase({ kind: 'composing', coords });
-    } else {
-      // No coords yet → caller will populate via a later trigger.
-      // For now, the FAB tap path lands here; Task 3 changes this to drop a pin.
-      setDraftPhase({ kind: 'composing', coords: { lat: 0, lng: 0 } });
-    }
-  };
-
   const handleNearMe = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') return;
