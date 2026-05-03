@@ -70,8 +70,9 @@ export function BackgroundMusicProvider({
     playerRef.current.replace(track.source);
     setCurrentTrackId(next);
     lastPlayedIdRef.current = next;
+    applyEffectiveVolume();
     playerRef.current.play();
-  }, [tracks]);
+  }, [tracks, applyEffectiveVolume]);
 
   // Attach the natural-end listener once when a player is created.
   // Track-end → setTimeout(gap) → next-track via startNextFromBag.
@@ -113,6 +114,7 @@ export function BackgroundMusicProvider({
       setCurrentTrackId(next);
       lastPlayedIdRef.current = next;
 
+      applyEffectiveVolume(muted);
       if (!muted) player.play();
     })();
     return () => {
@@ -120,6 +122,20 @@ export function BackgroundMusicProvider({
       playerRef.current?.remove();
     };
   }, [isAudioAvailable, tracks, attachEndListener]);
+
+  // Web only: silent autoplay is allowed; sound is gated until first user gesture.
+  // Start at webUnlockGain=0; ramp to 1 on first pointerdown.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!isAudioAvailable) return;
+    if (webUnlockGainRef.current === 1) return; // test-mode (tracksOverride) starts unlocked
+    const unlock = () => {
+      webUnlockGainRef.current = 1;
+      applyEffectiveVolume();
+    };
+    document.addEventListener('pointerdown', unlock, { once: true });
+    return () => document.removeEventListener('pointerdown', unlock);
+  }, [isAudioAvailable, applyEffectiveVolume]);
 
   // AppState pause/resume. Reads isMuted via ref so the listener doesn't have
   // to re-attach on every mute toggle.
