@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react-native';
-import { Text, Pressable } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { Text, Pressable, AppState, AppStateStatus } from 'react-native';
 import { BackgroundMusicProvider } from '../BackgroundMusicProvider';
 import { useBackgroundMusic } from '../useBackgroundMusic';
 import { __lastPlayer, createAudioPlayer } from 'expo-audio';
@@ -12,11 +12,14 @@ const fakeTracks = [
 
 // Flush microtasks AND drain one macrotask cycle so async useEffect chains
 // and setTimeout(0) callbacks (used in the natural-end track transition) can
-// both settle.
+// both settle. Wrapped in act() so React commits queued state updates and
+// runs the resulting effects synchronously.
 async function flush() {
-  await Promise.resolve();
-  await Promise.resolve();
-  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  });
 }
 
 function Probe() {
@@ -209,5 +212,68 @@ describe('BackgroundMusicProvider — duck/unduck', () => {
     expect(player.volume).toBe(0);
     fireEvent.press(screen.getByTestId('unduck-btn'));
     expect(player.volume).toBe(0);
+  });
+});
+
+describe('BackgroundMusicProvider — AppState', () => {
+  let listeners: Array<(s: AppStateStatus) => void>;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    __lastPlayer.current = null;
+    AsyncStorage.clear();
+    listeners = [];
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, listener) => {
+      const fn = listener as (s: AppStateStatus) => void;
+      listeners.push(fn);
+      return {
+        remove: () => {
+          listeners = listeners.filter((l) => l !== fn);
+        },
+      } as any;
+    });
+  });
+
+  test('background → pause; active → play', async () => {
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <Text>x</Text>
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    const pauseCallsBefore = (player.pause as jest.Mock).mock.calls.length;
+    listeners.forEach((l) => l('background'));
+    expect((player.pause as jest.Mock).mock.calls.length).toBe(pauseCallsBefore + 1);
+    const playCallsBefore = (player.play as jest.Mock).mock.calls.length;
+    listeners.forEach((l) => l('active'));
+    expect((player.play as jest.Mock).mock.calls.length).toBe(playCallsBefore + 1);
+  });
+
+  test('double-fire active → active does not call play twice', async () => {
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <Text>x</Text>
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    const playCallsBefore = (player.play as jest.Mock).mock.calls.length;
+    listeners.forEach((l) => l('active'));
+    listeners.forEach((l) => l('active'));
+    expect((player.play as jest.Mock).mock.calls.length).toBe(playCallsBefore);
+  });
+
+  test('AppState active does not unmute a muted player', async () => {
+    await AsyncStorage.setItem('@sulat:bgmuted', 'true');
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <Text>x</Text>
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    listeners.forEach((l) => l('background'));
+    listeners.forEach((l) => l('active'));
+    expect(player.play).not.toHaveBeenCalled();
   });
 });

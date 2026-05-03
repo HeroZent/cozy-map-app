@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer } from 'expo-audio';
 import { TRACKS, Track } from './tracks';
@@ -119,6 +120,27 @@ export function BackgroundMusicProvider({
       playerRef.current?.remove();
     };
   }, [isAudioAvailable, tracks, attachEndListener]);
+
+  // AppState pause/resume. Reads isMuted via ref so the listener doesn't have
+  // to re-attach on every mute toggle.
+  const lastAppStateRef = useRef<AppStateStatus>('active');
+  useEffect(() => {
+    if (!isAudioAvailable) return;
+    const handle = (next: AppStateStatus) => {
+      const prev = lastAppStateRef.current;
+      if (prev === next) return; // double-fire guard
+      lastAppStateRef.current = next;
+      if (next === 'background' || next === 'inactive') {
+        playerRef.current?.pause();
+      } else if (next === 'active') {
+        if (!isMutedRef.current && playerRef.current) {
+          playerRef.current.play();
+        }
+      }
+    };
+    const sub = AppState.addEventListener('change', handle);
+    return () => sub.remove();
+  }, [isAudioAvailable]);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
