@@ -1,6 +1,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, PanResponder } from 'react-native';
 import * as Location from 'expo-location';
+import { screenToMapCoords } from '@/map/screenToMapCoords';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StoryPins } from '@/map/StoryPins';
@@ -147,6 +148,63 @@ export default function Home() {
     const coords = await resolveDropCoords();
     setDraftPhase({ kind: 'placing', coords });
   }, [resolveDropCoords]);
+
+  // Press-and-drag from `+` (Gesture B): hold the FAB for 200ms to
+  // arm drag mode (FAB scales up for visual feedback), then drag the
+  // finger across the map; on release we unproject the screen point
+  // to lng/lat and drop a pin there. Plain taps (release before arm)
+  // fall through to startDraftFromFab() for the existing GPS-or-center
+  // behavior.
+  const [fabDragging, setFabDragging] = useState(false);
+  const [fabDragOffset, setFabDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const fabArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fabDraggingRef = useRef(false);
+  useEffect(() => { fabDraggingRef.current = fabDragging; }, [fabDragging]);
+  const fabLayoutRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  const fabPanResponder = useMemo(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        if (fabArmTimerRef.current) clearTimeout(fabArmTimerRef.current);
+        fabArmTimerRef.current = setTimeout(() => {
+          fabArmTimerRef.current = null;
+          setFabDragging(true);
+        }, 200);
+      },
+      onPanResponderMove: (_e, g) => {
+        if (!fabDraggingRef.current) return;
+        setFabDragOffset({ x: g.dx, y: g.dy });
+      },
+      onPanResponderRelease: async (_e, g) => {
+        if (fabArmTimerRef.current) { clearTimeout(fabArmTimerRef.current); fabArmTimerRef.current = null; }
+        const wasDragging = fabDraggingRef.current;
+        setFabDragging(false);
+        setFabDragOffset({ x: 0, y: 0 });
+        if (!wasDragging) {
+          // Plain tap — fall through to the existing tap handler
+          startDraftFromFab();
+          return;
+        }
+        // Compute drop coords from the FAB layout + drag offset
+        const layout = fabLayoutRef.current;
+        if (!layout) return;
+        const screenX = layout.x + layout.width / 2 + g.dx;
+        const screenY = layout.y + layout.height / 2 + g.dy;
+        const dropCoords = await screenToMapCoords({ x: screenX, y: screenY });
+        if (dropCoords) {
+          closeAllSheets();
+          setDraftPhase({ kind: 'placing', coords: dropCoords });
+        }
+      },
+      onPanResponderTerminate: () => {
+        if (fabArmTimerRef.current) { clearTimeout(fabArmTimerRef.current); fabArmTimerRef.current = null; }
+        setFabDragging(false);
+        setFabDragOffset({ x: 0, y: 0 });
+      },
+    }),
+    [startDraftFromFab],
+  );
 
   return (
     <View style={styles.fill}>
@@ -371,20 +429,29 @@ export default function Home() {
               ]}
               pointerEvents="none"
             />
-            <PressableScale
-              onPress={startDraftFromFab}
-              scaleAmount={0.92}
-              style={[
-                styles.fab,
-                {
-                  backgroundColor: theme.accent,
-                  borderRadius: theme.radii.full,
-                  ...theme.elevations.glow,
-                },
-              ]}
+            <View
+              testID="fab-plus"
+              onLayout={(e) => { fabLayoutRef.current = e.nativeEvent.layout; }}
+              {...fabPanResponder.panHandlers}
             >
-              <Text style={styles.fabPlus}>＋</Text>
-            </PressableScale>
+              <View
+                style={[
+                  styles.fab,
+                  {
+                    backgroundColor: theme.accent,
+                    borderRadius: theme.radii.full,
+                    ...theme.elevations.glow,
+                    transform: [
+                      { translateX: fabDragOffset.x },
+                      { translateY: fabDragOffset.y },
+                      { scale: fabDragging ? 1.18 : 1 },
+                    ],
+                  },
+                ]}
+              >
+                <Text style={styles.fabPlus}>＋</Text>
+              </View>
+            </View>
           </View>
 
           <PressableScale

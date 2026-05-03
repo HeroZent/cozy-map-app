@@ -1,6 +1,6 @@
 // src/map/MapView.tsx — NATIVE (iOS/Android) implementation.
 // On the web target Metro picks `MapView.web.tsx` instead.
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { StyleSheet, View, type NativeSyntheticEvent } from 'react-native';
 import {
   Map,
@@ -12,6 +12,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { useViewport } from './useViewport';
+import { useRegisterScreenLookup } from './screenToMapCoords';
 import { MapProvider } from './MapContext';
 import type { LatLng } from '@/lib/geo';
 
@@ -52,6 +53,15 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
       duration: 1800,
     });
   }, [flyTarget]);
+
+  const lookup = useCallback(async (point: { x: number; y: number }) => {
+    const m = mapRef.current;
+    if (!m) return null;
+    // Native MapLibre RN unproject is async and returns LngLat as [lng, lat].
+    const ll = await m.unproject([point.x, point.y]);
+    return { lat: ll[1], lng: ll[0] };
+  }, []);
+  useRegisterScreenLookup(lookup);
 
   if (!loaded) return null;
 

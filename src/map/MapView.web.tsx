@@ -1,9 +1,10 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import Map, { type MapRef, type ViewStateChangeEvent } from 'react-map-gl/maplibre';
 import type { MapMouseEvent, MapLayerTouchEvent } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '@/theme/ThemeContext';
 import { useViewport } from './useViewport';
+import { useRegisterScreenLookup } from './screenToMapCoords';
 import type { LatLng } from '@/lib/geo';
 
 export interface FlyTarget extends LatLng {
@@ -41,6 +42,14 @@ export function MapView({ children, onDoubleClick, flyTarget }: MapViewProps) {
       duration: 1800,
     });
   }, [flyTarget]);
+
+  const lookup = useCallback(async (point: { x: number; y: number }) => {
+    const m = mapRef.current?.getMap();
+    if (!m) return null;
+    const ll = m.unproject([point.x, point.y]);
+    return { lat: ll.lat, lng: ll.lng };
+  }, []);
+  useRegisterScreenLookup(lookup);
 
   if (!loaded) return null;
 

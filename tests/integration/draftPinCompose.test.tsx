@@ -90,11 +90,41 @@ describe('draft pin compose flow', () => {
     expect(queryByTestId('compose-sheet')).toBeNull();
   });
 
-  it('tapping + drops a pin at viewport center when GPS is denied', async () => {
-    const { getByText, queryByTestId, findByTestId } = render(<IndexScreen />);
+  /** Simulate a plain tap on the FAB (no drag). The FAB is now a View
+   *  with PanResponder, not a Pressable, so we fire the responder
+   *  lifecycle directly: grant -> release with no movement and no
+   *  long-press arming -> falls through to startDraftFromFab().
+   *  The `touchHistory` shape is what PanResponder reads to compute
+   *  centroid coordinates — without it, fireEvent crashes with
+   *  "Cannot read properties of undefined (reading 'touchBank')". */
+  const tapFab = (node: any) => {
+    const touchHistory = {
+      touchBank: [],
+      numberActiveTouches: 0,
+      indexOfSingleActiveTouch: -1,
+      mostRecentTimeStamp: 0,
+    };
+    const stub = {
+      nativeEvent: {
+        touches: [],
+        changedTouches: [],
+        identifier: 1,
+        locationX: 0, locationY: 0,
+        pageX: 0, pageY: 0,
+        target: 0, timestamp: 0,
+      },
+      touchHistory,
+    };
+    fireEvent(node, 'responderGrant', stub);
+    fireEvent(node, 'responderRelease', stub);
+  };
 
-    // Trigger the FAB. The "+" character on the FAB:
-    fireEvent.press(getByText('＋'));
+  it('tapping + drops a pin at viewport center when GPS is denied', async () => {
+    const { getByTestId, queryByTestId, findByTestId } = render(<IndexScreen />);
+
+    // Trigger the FAB. PanResponder grant + release with no movement
+    // and no 200ms hold = plain tap, falls through to startDraftFromFab().
+    tapFab(getByTestId('fab-plus'));
 
     // Pin renders (placing phase)
     expect(await findByTestId('draft-pin')).toBeTruthy();
@@ -107,8 +137,8 @@ describe('draft pin compose flow', () => {
     Location.requestForegroundPermissionsAsync.mockResolvedValueOnce({ status: 'granted' });
     Location.getCurrentPositionAsync.mockResolvedValueOnce({ coords: { latitude: 7.7, longitude: 125.5 } });
 
-    const { getByText, findByTestId } = render(<IndexScreen />);
-    fireEvent.press(getByText('＋'));
+    const { getByTestId, findByTestId } = render(<IndexScreen />);
+    tapFab(getByTestId('fab-plus'));
 
     const pin = await findByTestId('draft-pin');
     expect(pin.props.accessibilityLabel).toBe('pin-7.7-125.5');
