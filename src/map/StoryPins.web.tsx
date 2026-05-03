@@ -3,8 +3,20 @@ import { Marker, useMap } from 'react-map-gl/maplibre';
 import { Pressable } from 'react-native';
 import { PinMarker } from './PinMarker';
 import { ClusterMarker } from './ClusterMarker';
-import { useClusters, type StoryFeature } from './useClusters';
+import { useClusters, type StoryFeature, CLUSTER_MAX_ZOOM } from './useClusters';
 import type { Story } from '@/data/types';
+
+/** Coordinate epsilon for "essentially the same spot." 1e-5 degrees ≈ 1.1m
+ *  at the equator — closer than this and the pins overlap visually even at
+ *  the highest zoom level the map allows. */
+const COLOCATED_EPSILON = 1e-5;
+
+function areColocated(a: [number, number], b: [number, number]): boolean {
+  return (
+    Math.abs(a[0] - b[0]) < COLOCATED_EPSILON &&
+    Math.abs(a[1] - b[1]) < COLOCATED_EPSILON
+  );
+}
 
 /** Engagement signal — replies + reactions. */
 function engagementOf(s: Story): number {
@@ -101,30 +113,72 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
         return bScore - aScore;
       });
 
-      const promoted = sorted.slice(0, PROMOTE_PER_CLUSTER);
-      const rest = sorted.slice(PROMOTE_PER_CLUSTER);
+      const topLeaf = sorted[0];
+      if (!topLeaf) continue;
+      const others = sorted.slice(1);
+      const topCoord = topLeaf.geometry.coordinates as [number, number];
 
-      // Top-N promoted → individual pins
-      for (const leaf of promoted) out.push(leaf);
+      // Split the rest of the leaves into the ones sitting under the top pin
+      // ("stack") and the ones at any other location ("elsewhere"). This
+      // matters because rendering topLeaf as a regular pin would visually
+      // hide every leaf in `stack` — the user can't see or tap them.
+      const stack: StoryFeature[] = [];
+      const elsewhere: StoryFeature[] = [];
+      for (const leaf of others) {
+        if (areColocated(leaf.geometry.coordinates as [number, number], topCoord)) {
+          stack.push(leaf);
+        } else {
+          elsewhere.push(leaf);
+        }
+      }
 
-      // 0 left → already covered by promoted pins; skip cluster entirely
-      // 1 left → promote that single one too (cluster-of-one is silly UX)
-      // 2+ left → keep as a synthetic smaller cluster
-      if (rest.length === 1) {
-        out.push(rest[0]!);
-      } else if (rest.length >= 2) {
+      // ── Render the top spot ─────────────────────────────────────────────
+      // No co-located siblings → top is just a regular pin.
+      // Has siblings → render the entire stack as a cluster badge at top's
+      // coord (count includes top itself). Tapping opens the list sheet.
+      if (stack.length === 0) {
+        out.push(topLeaf);
+      } else {
+        const stacked = [topLeaf, ...stack];
         out.push({
           type: 'Feature',
           properties: {
             cluster: true,
-            cluster_id: props.cluster_id,
-            point_count: rest.length,
-            _restLeaves: rest,
+            cluster_id: props.cluster_id * 2,
+            point_count: stacked.length,
+            _restLeaves: stacked,
           },
-          geometry: {
-            type: 'Point',
-            coordinates: feature.geometry.coordinates as [number, number],
+          geometry: { type: 'Point', coordinates: topCoord },
+        });
+      }
+
+      // ── Render the elsewhere group ──────────────────────────────────────
+      if (elsewhere.length === 1) {
+        out.push(elsewhere[0]!);
+      } else if (elsewhere.length >= 2) {
+        // Recompute the centroid from just the elsewhere coords. The original
+        // supercluster centroid was biased by topLeaf's location, which would
+        // pull this badge toward the stack pin we just rendered.
+        let sumLng = 0;
+        let sumLat = 0;
+        for (const l of elsewhere) {
+          const c = l.geometry.coordinates as [number, number];
+          sumLng += c[0];
+          sumLat += c[1];
+        }
+        const centroid: [number, number] = [
+          sumLng / elsewhere.length,
+          sumLat / elsewhere.length,
+        ];
+        out.push({
+          type: 'Feature',
+          properties: {
+            cluster: true,
+            cluster_id: props.cluster_id * 2 + 1,
+            point_count: elsewhere.length,
+            _restLeaves: elsewhere,
           },
+          geometry: { type: 'Point', coordinates: centroid },
         });
       }
     }
@@ -180,13 +234,6 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
                   const minLat = Math.min(...lats);
                   const maxLat = Math.max(...lats);
 
-                  // Strategy:
-                  //   1. Compute the fit-bounds camera for the cluster's
-                  //      children. If the natural zoom is >= 15, the cluster
-                  //      can un-cluster visually (supercluster.maxZoom = 14)
-                  //      — fly there.
-                  //   2. Otherwise the children sit on top of each other or
-                  //      too close to separate, so open the list sheet.
                   let camera: { center: [number, number]; zoom: number } | undefined;
                   try {
                     camera = mm.cameraForBounds(
@@ -201,7 +248,13 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
                        through to the list-sheet branch */
                   }
 
-                  if (camera && camera.zoom >= 15) {
+                  // Flying only helps if the leaves can actually un-cluster
+                  // at the destination zoom. Above CLUSTER_MAX_ZOOM, supercluster
+                  // stops grouping — but if cameraForBounds wants a zoom at or
+                  // beyond that, the leaves are tighter than 60px even there
+                  // and would just re-cluster (or worse, overlap as raw pins).
+                  // In that case skip the animation and open the list directly.
+                  if (camera && camera.zoom >= 15 && camera.zoom < CLUSTER_MAX_ZOOM) {
                     // They can un-cluster — zoom in and let the user explore
                     // the individual pins on the map.
                     mm.flyTo({

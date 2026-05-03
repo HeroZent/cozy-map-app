@@ -2,6 +2,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { StoryPins } from '@/map/StoryPins';
 import { HeatmapLayer } from '@/map/HeatmapLayer';
 import { StorySheet } from '@/story/StorySheet';
@@ -175,7 +176,10 @@ export default function Home() {
                 },
               ]}
             >
-              <Text style={[styles.iconBtnText, { color: theme.accent }]}>◉</Text>
+              {/* Vector icon (not emoji) so the user glyph picks up theme.accent
+               *  the same gold tint as the ⚙ gear, matching the bell's
+               *  perceived warmth across the header. */}
+              <Ionicons name="person" size={20} color={theme.accent} />
               {/* Badge stays here as a visual cue directing users to the bell — intentional duplicate. */}
               {activityCount > 0 && (
                 <View style={[styles.iconBadge, { backgroundColor: theme.accent }]} />

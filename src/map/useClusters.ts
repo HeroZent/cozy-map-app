@@ -10,9 +10,17 @@ interface StoryProps {
 export type StoryFeature = PointFeature<StoryProps>;
 export type AnyFeature = StoryFeature | ClusterFeature<Record<string, never>>;
 
+/** Highest zoom at which supercluster will still group nearby points. Beyond
+ *  this, every point renders individually. We keep it close to maplibre's
+ *  default max so sulats dropped at the same coordinate (same plaza, same
+ *  building) stay clustered even after the user pinch-zooms all the way in.
+ *  Exported so the click handler can decide whether flying-to-fit would just
+ *  re-cluster the leaves. */
+export const CLUSTER_MAX_ZOOM = 20;
+
 export function useClusters(stories: Story[], zoom: number, bbox: [number, number, number, number]) {
   const sc = useMemo(() => {
-    const s = new Supercluster<StoryProps, Record<string, never>>({ radius: 60, maxZoom: 14 });
+    const s = new Supercluster<StoryProps, Record<string, never>>({ radius: 60, maxZoom: CLUSTER_MAX_ZOOM });
     const points: StoryFeature[] = stories.map((story) => ({
       type: 'Feature',
       properties: { cluster: false, story },

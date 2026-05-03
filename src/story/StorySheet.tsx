@@ -1,6 +1,6 @@
 // src/story/StorySheet.tsx
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/theme/ThemeContext';
 import { getMoodById } from '@/moods/catalog';
@@ -12,6 +12,7 @@ import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet
 import { PressableScale } from '@/components/PressableScale';
 import { StoryCard } from './StoryCard';
 import { PH_HOTLINE } from '@/moderation/hotlines';
+import { useUser } from '@/data/useUser';
 import type { Story } from '@/data/types';
 
 export interface StorySheetProps {
@@ -65,6 +66,18 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
 
   const reading = useMemo(() => readingHint(story.body), [story.body]);
 
+  // Author handle for the header.
+  //   • Other people's sulats: show story.display_handle, falling back to
+  //     'anon' (matches the ReplyBubble convention so the same person reads
+  //     consistently across the story and their replies).
+  //   • Your own sulats: always show 'anon'. You already know you wrote it,
+  //     and this keeps your handle out of any screenshot/share you take of
+  //     your own sulat — handy for test data and for early users posting
+  //     under throwaway claimed handles.
+  const { user: currentUser } = useUser();
+  const isOwnSulat = currentUser?.id === story.author_id;
+  const handle = isOwnSulat ? 'anon' : (story.display_handle ?? 'anon');
+
   return (
     <AnimatedSheet
       ref={sheetRef}
@@ -112,6 +125,28 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
               <Text style={styles.moodPillEmoji}>{mood?.emoji ?? '·'}</Text>
               <Text style={[styles.moodPillText, { color: moodColor }]}>
                 {mood?.name?.toLowerCase() ?? story.mood}
+              </Text>
+            </View>
+
+            {/* Author handle — mood-tinted dot + handle text. Mirrors the
+             *  identity treatment used in ReplyBubble so a reader recognises
+             *  "@maryanne" the same way whether they're reading the sulat
+             *  itself or one of her replies. */}
+            <View
+              style={[
+                styles.handlePill,
+                {
+                  backgroundColor: `${moodColor}14`,
+                  borderColor: `${moodColor}33`,
+                },
+              ]}
+            >
+              <View style={[styles.handleDot, { backgroundColor: moodColor }]} />
+              <Text
+                style={[styles.handleText, { color: moodColor }]}
+                numberOfLines={1}
+              >
+                {handle}
               </Text>
             </View>
 
@@ -164,45 +199,59 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
           <FlagSheet storyId={story.id} onClose={() => { setFlagOpen(false); setFlagged(true); }} />
         ) : (
           <>
-            {/* Body card */}
-            <StoryCard
-              body={story.body}
-              cardStyle={story.card_style}
-              locationLabel={story.location_label}
-              createdAt={story.created_at}
-              hasCrisisNote={story.has_crisis_note}
-            />
-
-            {/* Reactions */}
-            <ReactionBar story={story} onReacted={onReacted} />
-
-            {/* Reply thread (lazy — mounts on first open) */}
-            {threadOpen && (
-              <ReplyThread
-                storyId={story.id}
-                onCountChange={(delta) => setReplyCount((c) => c + delta)}
-                storyMood={story.mood}
+            {/* Scrollable middle: body + reactions + thread + crisis note.
+             *  Header (close/flag) and footer (reply button) stay pinned so
+             *  the user can always close the sheet or open the thread, no
+             *  matter how long the sulat body is. Without this wrapper, long
+             *  bodies overflow the cardWrap maxHeight and the reply chip is
+             *  clipped invisibly. */}
+            <ScrollView
+              style={styles.scrollArea}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator
+              nestedScrollEnabled
+            >
+              {/* Body card */}
+              <StoryCard
+                body={story.body}
+                cardStyle={story.card_style}
+                locationLabel={story.location_label}
+                createdAt={story.created_at}
+                hasCrisisNote={story.has_crisis_note}
               />
-            )}
 
-            {/* Crisis note */}
-            {story.has_crisis_note && (
-              <View style={[styles.crisisNote, { borderTopColor: 'rgba(244,201,122,0.08)' }]}>
-                <Text style={[styles.crisisNoteText, { color: theme.textMuted }]}>
-                  💙 Support is available if you need it.
-                </Text>
-                <PressableScale
-                  onPress={() => Linking.openURL(PH_HOTLINE.tel).catch(() => {})}
-                  style={styles.crisisHotlineBtn}
-                >
-                  <Text style={[styles.crisisNoteLink, { color: theme.accent }]}>
-                    {PH_HOTLINE.name} · {PH_HOTLINE.number}
+              {/* Reactions */}
+              <ReactionBar story={story} onReacted={onReacted} />
+
+              {/* Reply thread (lazy — mounts on first open) */}
+              {threadOpen && (
+                <ReplyThread
+                  storyId={story.id}
+                  onCountChange={(delta) => setReplyCount((c) => c + delta)}
+                  storyMood={story.mood}
+                />
+              )}
+
+              {/* Crisis note */}
+              {story.has_crisis_note && (
+                <View style={[styles.crisisNote, { borderTopColor: 'rgba(244,201,122,0.08)' }]}>
+                  <Text style={[styles.crisisNoteText, { color: theme.textMuted }]}>
+                    💙 Support is available if you need it.
                   </Text>
-                </PressableScale>
-              </View>
-            )}
+                  <PressableScale
+                    onPress={() => Linking.openURL(PH_HOTLINE.tel).catch(() => {})}
+                    style={styles.crisisHotlineBtn}
+                  >
+                    <Text style={[styles.crisisNoteLink, { color: theme.accent }]}>
+                      {PH_HOTLINE.name} · {PH_HOTLINE.number}
+                    </Text>
+                  </PressableScale>
+                </View>
+              )}
+            </ScrollView>
 
-            {/* Footer pills row */}
+            {/* Footer pills row — pinned outside the scroll so the reply
+             *  button is always reachable. */}
             <View style={styles.footerRow}>
               <View style={[styles.metaChip, { borderColor: 'rgba(244,201,122,0.12)' }]}>
                 <Text style={[styles.metaChipText, { color: theme.textFaint }]}>
@@ -285,9 +334,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   content: {
+    flex: 1,
     paddingBottom: 14,
     paddingHorizontal: 16,
     paddingTop: 12,
+  },
+  /* Scrollable middle section. flex:1 + a defined parent height (cardWrap's
+   * maxHeight 480) lets ScrollView claim the leftover space between the
+   * fixed header and footer, so long bodies become scrollable instead of
+   * clipped. */
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 4,
   },
   topHighlight: {
     height: 14,
@@ -332,6 +392,28 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '600',
     letterSpacing: -0.1,
+  },
+
+  /* Author handle pill */
+  handlePill: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 5,
+    maxWidth: 140,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  handleDot: {
+    borderRadius: 4,
+    height: 6,
+    width: 6,
+  },
+  handleText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: -0.05,
   },
 
   /* Location pill */

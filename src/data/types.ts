@@ -28,6 +28,9 @@ export interface Story {
   reaction_counts: Partial<Record<ReactionEmoji, number>>;
   my_reactions: ReactionEmoji[];
   reply_count: number;
+  /** Author's claimed handle, or null if they never claimed one. UI falls
+   *  back to 'anon' for null — matches the ReplyBubble convention. */
+  display_handle: string | null;
 }
 
 export interface User {

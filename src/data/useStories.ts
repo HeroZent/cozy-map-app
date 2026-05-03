@@ -18,11 +18,15 @@ export interface UseStoriesResult {
 
 type ReactionRow = { emoji: ReactionEmoji; user_id: string };
 type ReplyCountRow = { count: number };
-type StoryRow = Omit<Story, 'location' | 'reaction_count' | 'reaction_counts' | 'my_reactions' | 'reply_count'> & {
+/** Joined users row — PostgREST gives us either an object (nullable display_handle)
+ *  or null when the FK can't resolve. We only care about the handle here. */
+type UserJoin = { display_handle: string | null } | null;
+type StoryRow = Omit<Story, 'location' | 'reaction_count' | 'reaction_counts' | 'my_reactions' | 'reply_count' | 'display_handle'> & {
   lat: number;
   lng: number;
   reactions: ReactionRow[];
   replies: ReplyCountRow[];
+  users: UserJoin;
 };
 
 function toStory(r: StoryRow, userId: string | null): Story {
@@ -40,6 +44,7 @@ function toStory(r: StoryRow, userId: string | null): Story {
       ? reactions.filter((rx) => rx.user_id === userId).map((rx) => rx.emoji)
       : [],
     reply_count: r.replies?.[0]?.count ?? 0,
+    display_handle: r.users?.display_handle ?? null,
   };
 }
 
@@ -51,7 +56,7 @@ function inBbox(s: StoryRow, bbox: Bbox): boolean {
   );
 }
 
-const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, has_crisis_note, created_at, lat, lng, reactions(emoji, user_id), replies(count)';
+const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, has_crisis_note, created_at, lat, lng, reactions(emoji, user_id), replies(count), users(display_handle)';
 
 export function useStories(bbox: Bbox, refreshKey = 0): UseStoriesResult {
   const [stories, setStories] = useState<Story[]>([]);

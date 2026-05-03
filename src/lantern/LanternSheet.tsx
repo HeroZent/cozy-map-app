@@ -10,7 +10,7 @@ import type { Mood, Story } from '@/data/types';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import { PressableScale } from '@/components/PressableScale';
 
-const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, created_at, lat, lng';
+const SELECT = 'id, author_id, mood, body, card_style, location_label, pin_mode, language, status, is_memory, created_at, lat, lng, users(display_handle)';
 
 export interface LanternSheetProps {
   onClose: () => void;
@@ -40,7 +40,7 @@ export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: Lante
 
       if (data) {
         setStories(
-          data.map((r: typeof data[number] & { lat: number; lng: number }) => ({
+          data.map((r: typeof data[number] & { lat: number; lng: number; users: { display_handle: string | null } | null }) => ({
             ...r,
             location: { type: 'Point' as const, coordinates: [r.lng, r.lat] },
             reaction_count: 0,
@@ -48,6 +48,7 @@ export function LanternSheet({ onClose, onSelectStory, bottomOffset = 0 }: Lante
             my_reactions: [],
             reply_count: 0,
             card_style: r.card_style || 'a',
+            display_handle: r.users?.display_handle ?? null,
           })) as Story[],
         );
       }
