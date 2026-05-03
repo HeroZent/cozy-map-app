@@ -164,7 +164,6 @@ export default function Home() {
   // grant timer and release/terminate handlers so the drag flag is in sync
   // independent of React's commit cycle. This effect remains as a safety net.
   useEffect(() => { fabDraggingRef.current = fabDragging; }, [fabDragging]);
-  const fabLayoutRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const fabPanResponder = useMemo(() =>
     PanResponder.create({
@@ -194,11 +193,13 @@ export default function Home() {
           startDraftFromFab();
           return;
         }
-        // Compute drop coords from the FAB layout + drag offset
-        const layout = fabLayoutRef.current;
-        if (!layout) return;
-        const screenX = layout.x + layout.width / 2 + g.dx;
-        const screenY = layout.y + layout.height / 2 + g.dy;
+        // Use gestureState.moveX/Y — these are the latest pageX/pageY of
+        // the touch event, which is exactly what map.unproject() expects.
+        // Avoids the parent-relative-vs-page-relative mismatch that
+        // onLayout-based math suffered from (the FAB is nested inside
+        // fabWrap → bottomBar GlassSurface, so layout.x/y were local).
+        const screenX = g.moveX;
+        const screenY = g.moveY;
         const dropCoords = await screenToMapCoords({ x: screenX, y: screenY });
         if (dropCoords) {
           closeAllSheets();
@@ -441,7 +442,6 @@ export default function Home() {
             />
             <View
               testID="fab-plus"
-              onLayout={(e) => { fabLayoutRef.current = e.nativeEvent.layout; }}
               {...fabPanResponder.panHandlers}
             >
               <View
