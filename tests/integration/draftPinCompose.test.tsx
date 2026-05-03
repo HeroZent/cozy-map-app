@@ -77,4 +77,28 @@ describe('draft pin compose flow', () => {
     // ComposeSheet does NOT appear yet
     expect(queryByTestId('compose-sheet')).toBeNull();
   });
+
+  it('tapping + drops a pin at viewport center when GPS is denied', async () => {
+    const { getByText, queryByTestId, findByTestId } = render(<IndexScreen />);
+
+    // Trigger the FAB. The "+" character on the FAB:
+    fireEvent.press(getByText('＋'));
+
+    // Pin renders (placing phase)
+    expect(await findByTestId('draft-pin')).toBeTruthy();
+    // ComposeSheet does NOT open
+    expect(queryByTestId('compose-sheet')).toBeNull();
+  });
+
+  it('tapping + uses GPS coords when permission is granted', async () => {
+    const Location = require('expo-location');
+    Location.requestForegroundPermissionsAsync.mockResolvedValueOnce({ status: 'granted' });
+    Location.getCurrentPositionAsync.mockResolvedValueOnce({ coords: { latitude: 7.7, longitude: 125.5 } });
+
+    const { getByText, findByTestId } = render(<IndexScreen />);
+    fireEvent.press(getByText('＋'));
+
+    const pin = await findByTestId('draft-pin');
+    expect(pin.props.accessibilityLabel).toBe('pin-7.7-125.5');
+  });
 });

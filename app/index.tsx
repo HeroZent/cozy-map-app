@@ -136,6 +136,28 @@ export default function Home() {
     } catch {}
   };
 
+  /** Resolve the coords where a pin drops when the user taps "+":
+   *  Use the user's GPS if granted; otherwise fall back to the current
+   *  viewport center read from useViewport(). */
+  const resolveDropCoords = useCallback(async (): Promise<{ lat: number; lng: number }> => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const { coords } = await Location.getCurrentPositionAsync({});
+        return { lat: coords.latitude, lng: coords.longitude };
+      }
+    } catch {
+      /* fall through to viewport center */
+    }
+    return { lat: viewport.latitude, lng: viewport.longitude };
+  }, [viewport.latitude, viewport.longitude]);
+
+  const startDraftFromFab = useCallback(async () => {
+    closeAllSheets();
+    const coords = await resolveDropCoords();
+    setDraftPhase({ kind: 'placing', coords });
+  }, [resolveDropCoords]);
+
   return (
     <View style={styles.fill}>
       {/* Map fills entire screen — loaded lazily so the app shell renders first */}
@@ -352,7 +374,7 @@ export default function Home() {
               pointerEvents="none"
             />
             <PressableScale
-              onPress={() => openCompose()}
+              onPress={startDraftFromFab}
               scaleAmount={0.92}
               style={[
                 styles.fab,
