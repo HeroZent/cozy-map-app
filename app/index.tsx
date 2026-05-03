@@ -14,7 +14,9 @@ import { ProfileModal } from '@/profile/ProfileModal';
 import { useStories } from '@/data/useStories';
 import { useViewport } from '@/map/useViewport';
 import { useTheme } from '@/theme/ThemeContext';
+import { SulatLoader } from '@/brand/SulatLoader';
 import { SulatLogo } from '@/brand/SulatLogo';
+import { useLoaderGating } from '@/brand/useLoaderGating';
 import { MapVignette, MapWarmTint } from '@/map/MapVignette';
 import { PressableScale } from '@/components/PressableScale';
 import { GlassSurface } from '@/components/GlassSurface';
@@ -52,7 +54,8 @@ export default function Home() {
     if (firstFocus.current) { firstFocus.current = false; return; }
     setRefreshKey((k) => k + 1);
   }, []));
-  const { stories } = useStories({ minLng: bbox[0], minLat: bbox[1], maxLng: bbox[2], maxLat: bbox[3] }, refreshKey);
+  const { stories, loading } = useStories({ minLng: bbox[0], minLat: bbox[1], maxLng: bbox[2], maxLat: bbox[3] }, refreshKey);
+  const loaderGating = useLoaderGating(loading);
   const [heatmapOn, setHeatmapOn] = useState(true);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
@@ -494,6 +497,11 @@ export default function Home() {
           </PressableScale>
         </View>
       </GlassSurface>
+
+      {/* Cold-start loader — overlays everything until initial Supabase data resolves */}
+      {loaderGating.mounted && (
+        <SulatLoader visible={loaderGating.visible} onDismissed={loaderGating.onDismissed} />
+      )}
     </View>
   );
 }
