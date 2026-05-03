@@ -271,7 +271,7 @@ export default function Home() {
       {/* Floating header — frosted glass strip */}
       <GlassSurface style={styles.headerGlass} pointerEvents="box-none">
         <View style={styles.headerInner} pointerEvents="box-none">
-          <SulatLogo size={26} />
+          <SulatLogo size={38} />
           <View style={styles.headerRight} pointerEvents="box-none">
             {bgMusic.isAudioAvailable && (
               <PressableScale
