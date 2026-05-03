@@ -1,5 +1,5 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer } from 'expo-audio';
 import { TRACKS, Track } from './tracks';
@@ -137,11 +137,13 @@ export function BackgroundMusicProvider({
     return () => document.removeEventListener('pointerdown', unlock);
   }, [isAudioAvailable, applyEffectiveVolume]);
 
-  // AppState pause/resume. Reads isMuted via ref so the listener doesn't have
-  // to re-attach on every mute toggle.
+  // AppState pause/resume — native only. On web we skip this entirely so
+  // music keeps playing when the user alt-tabs or the tab loses focus
+  // (browsers don't pause hidden-tab audio by default).
   const lastAppStateRef = useRef<AppStateStatus>('active');
   useEffect(() => {
     if (!isAudioAvailable) return;
+    if (Platform.OS === 'web') return;
     const handle = (next: AppStateStatus) => {
       const prev = lastAppStateRef.current;
       if (prev === next) return; // double-fire guard
