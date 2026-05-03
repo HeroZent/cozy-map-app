@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>sulat · Loading & Logo Exploration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    html, body { margin: 0; padding: 0; background: #f0eee9; font-family: "Cormorant Garamond", Georgia, serif; }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="logos.jsx"></script>
+  <script type="text/babel" src="loading-screens.jsx"></script>
+
+  <script type="text/babel">
+    function App() {
+      return (
+        <DesignCanvas>
+          {/* INTRO NOTE */}
+          <DCSection id="intro" title="sulat · loading + logo" subtitle="Original concept inspired by the source app's lantern motif. Exploring direction before pixel-perfecting.">
+            <DCArtboard id="thinking" label="design notes" width={420} height={340}>
+              <div style={{
+                width: '100%', height: '100%',
+                background: '#FAF7F0',
+                padding: '28px 32px',
+                fontFamily: '"Cormorant Garamond", Georgia, serif',
+                color: '#3a2e20',
+                display: 'flex', flexDirection: 'column', gap: 12,
+                fontSize: 14, lineHeight: 1.45,
+              }}>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: '#8a6f4a' }}>system</div>
+                <div style={{ fontSize: 22, lineHeight: 1.15, fontStyle: 'italic' }}>
+                  Warm amber on deep navy. Lanterns drift up. Letters arrive in the night.
+                </div>
+                <ul style={{ paddingLeft: 18, margin: 0, color: '#5a4a30' }}>
+                  <li>Type: italic serif for the wordmark, mono for system text</li>
+                  <li>Color: <code style={{ background: '#0B1326', color: '#E8B86A', padding: '0 4px' }}>#0B1326</code> ink, <code style={{ background: '#E8B86A', color: '#0B1326', padding: '0 4px' }}>#E8B86A</code> amber</li>
+                  <li>Motif: glowing lantern, paper-fold, handwritten ink</li>
+                  <li>Tone: quiet, intimate, festival-at-night</li>
+                </ul>
+                <div style={{ fontSize: 12, color: '#7a624a', marginTop: 'auto' }}>
+                  Drag any artboard to rearrange · click ⤢ to focus full-screen
+                </div>
+              </div>
+            </DCArtboard>
+          </DCSection>
+
+          {/* LOGOS */}
+          <DCSection id="logos" title="Logo directions" subtitle="Six explorations — wordmark, mark+wordmark, monogram, emblem.">
+            <DCArtboard id="logo-01" label="01 · Wordmark + glowing dot" width={420} height={220}>
+              <LogoCard label="primary" sub="closest to source UI">
+                <LogoWordmarkDot />
+              </LogoCard>
+            </DCArtboard>
+
+            <DCArtboard id="logo-02" label="02 · Wordmark + lantern" width={420} height={220}>
+              <LogoCard label="festival">
+                <LogoWordmarkLantern />
+              </LogoCard>
+            </DCArtboard>
+
+            <DCArtboard id="logo-03" label="03 · Folded paper monogram" width={420} height={220}>
+              <LogoCard label="literal" sub="folded letter">
+                <LogoMonogramFold size={120} />
+              </LogoCard>
+            </DCArtboard>
+
+            <DCArtboard id="logo-04" label="04 · Stamped emblem" width={420} height={260}>
+              <LogoCard label="postmark" height={260}>
+                <LogoStamp size={200} />
+              </LogoCard>
+            </DCArtboard>
+
+            <DCArtboard id="logo-05" label="05 · Paper plane mark" width={420} height={260}>
+              <LogoCard label="sent" height={260}>
+                <LogoPaperPlane size={140} />
+              </LogoCard>
+            </DCArtboard>
+
+            <DCArtboard id="logo-06" label="06 · Inverted (light bg)" width={420} height={220}>
+              <LogoCard label="inverse" bg="#F4E9D2">
+                <LogoInverse />
+              </LogoCard>
+            </DCArtboard>
+          </DCSection>
+
+          {/* LOADING SCREENS */}
+          <DCSection id="loading" title="Loading screens" subtitle="Mobile, 360×780. Each loops on its own animation. Open one full-screen for a true preview.">
+            <DCArtboard id="load-01" label="01 · Centered breathing" width={360} height={780}>
+              <LoadingCentered />
+            </DCArtboard>
+
+            <DCArtboard id="load-02" label="02 · Lanterns rising" width={360} height={780}>
+              <LoadingRisingLanterns />
+            </DCArtboard>
+
+            <DCArtboard id="load-03" label="03 · Map reveal" width={360} height={780}>
+              <LoadingMapReveal />
+            </DCArtboard>
+
+            <DCArtboard id="load-04" label="04 · Single lantern" width={360} height={780}>
+              <LoadingSingleLantern />
+            </DCArtboard>
+
+            <DCArtboard id="load-05" label="05 · Handwritten letter" width={360} height={780}>
+              <LoadingHandwritten />
+            </DCArtboard>
+          </DCSection>
+
+          {/* PALETTE / SYSTEM */}
+          <DCSection id="system" title="System reference" subtitle="Tokens used across logo + loading.">
+            <DCArtboard id="palette" label="palette" width={620} height={140}>
+              <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+                {[
+                  ['#0B1326', 'ink'],
+                  ['#070D1B', 'ink-deep'],
+                  ['#1A2238', 'ink-warm'],
+                  ['#E8B86A', 'amber'],
+                  ['#F2D08C', 'amber-soft'],
+                  ['#C97A8A', 'rose'],
+                  ['#F4E9D2', 'paper'],
+                ].map(([c, n]) => (
+                  <div key={n} style={{
+                    flex: 1, background: c, position: 'relative',
+                    display: 'flex', alignItems: 'flex-end', padding: 10,
+                    fontFamily: 'JetBrains Mono, monospace', fontSize: 9,
+                    color: c === '#F4E9D2' || c === '#F2D08C' ? '#0B1326' : '#E8B86A',
+                  }}>
+                    <div>
+                      <div style={{ opacity: 0.55, letterSpacing: 1, textTransform: 'uppercase' }}>{n}</div>
+                      <div>{c}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </DCArtboard>
+
+            <DCArtboard id="type" label="type" width={620} height={220}>
+              <div style={{ width: '100%', height: '100%', background: '#0B1326', padding: 24, color: '#E8B86A' }}>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.5, marginBottom: 8 }}>display · cormorant italic</div>
+                <div style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', fontSize: 56, lineHeight: 1, marginBottom: 14 }}>sulat<span style={{ color: '#F2D08C' }}>.</span></div>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.5, marginBottom: 6 }}>body · crimson pro</div>
+                <div style={{ fontFamily: '"Crimson Pro", serif', fontSize: 16, opacity: 0.85 }}>A place for letters in the dark — read what neighbors have left, leave a lantern of your own.</div>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, letterSpacing: 2, marginTop: 14, opacity: 0.6 }}>SYSTEM · JETBRAINS MONO · 11/2</div>
+              </div>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

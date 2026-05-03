@@ -1,0 +1,96 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#1A2440"></stop>
+      <stop offset="55%" stop-color="#0B1326"></stop>
+      <stop offset="100%" stop-color="#06091A"></stop>
+    </radialGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBE6B8"></stop>
+      <stop offset="55%" stop-color="#F0C77A"></stop>
+      <stop offset="100%" stop-color="#D9A050"></stop>
+    </linearGradient>
+    <linearGradient id="paperBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A6772F"></stop>
+      <stop offset="100%" stop-color="#7A5520"></stop>
+    </linearGradient>
+    <linearGradient id="flapShade" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#C99549"></stop>
+      <stop offset="100%" stop-color="#8E6326"></stop>
+    </linearGradient>
+    <radialGradient id="emit" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFEABF" stop-opacity="0.95"></stop>
+      <stop offset="40%" stop-color="#F2D08C" stop-opacity="0.5"></stop>
+      <stop offset="100%" stop-color="#E8B86A" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="innerGlow" cx="50%" cy="0%" r="60%">
+      <stop offset="0%" stop-color="#FFF1CF" stop-opacity="1"></stop>
+      <stop offset="60%" stop-color="#FBE6B8" stop-opacity="0.4"></stop>
+      <stop offset="100%" stop-color="#F0C77A" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"></rect>
+
+  
+  <g fill="#F2D08C" opacity="0.55">
+    <circle cx="180" cy="220" r="2"></circle>
+    <circle cx="860" cy="180" r="1.5"></circle>
+    <circle cx="240" cy="820" r="1.8"></circle>
+    <circle cx="820" cy="780" r="2"></circle>
+    <circle cx="140" cy="540" r="1.3"></circle>
+    <circle cx="900" cy="500" r="1.5"></circle>
+    <circle cx="500" cy="160" r="1.4"></circle>
+    <circle cx="500" cy="880" r="1.6"></circle>
+    <circle cx="320" cy="380" r="1.1"></circle>
+    <circle cx="700" cy="640" r="1.1"></circle>
+  </g>
+
+  
+  <circle cx="512" cy="512" r="380" fill="url(#emit)"></circle>
+
+  
+  <g transform="translate(512 532) rotate(-6)">
+    
+    <ellipse cx="0" cy="170" rx="220" ry="14" fill="#000" opacity="0.45"></ellipse>
+
+    
+    <rect x="-220" y="-150" width="440" height="300" rx="14" fill="url(#paperBack)"></rect>
+
+    
+    <rect x="-200" y="-100" width="400" height="250" rx="6" fill="url(#paper)"></rect>
+
+    
+    <path d="M -200 -100 L 200 -100 L 175 -32 L -175 -32 Z" fill="url(#innerGlow)"></path>
+    
+    <path d="M -200 -100 L 200 -100" stroke="#FFF6DC" stroke-width="3" opacity="0.9"></path>
+
+    
+    <g>
+      <path d="M -200 -100 L 0 -210 L 200 -100 Z" fill="url(#flapShade)"></path>
+      
+      <path d="M -200 -100 L 0 -180 L 200 -100 Z" fill="#000" opacity="0.18"></path>
+      
+      <path d="M -200 -100 L 0 -210" stroke="#E0AC5F" stroke-width="2" opacity="0.7"></path>
+      <path d="M 0 -210 L 200 -100" stroke="#7A5520" stroke-width="2" opacity="0.5"></path>
+    </g>
+
+    
+    <line x1="-150" y1="22" x2="150" y2="22" stroke="#9A6F32" stroke-width="2.5" opacity="0.4" stroke-linecap="round"></line>
+    <line x1="-150" y1="78" x2="150" y2="78" stroke="#9A6F32" stroke-width="2.5" opacity="0.3" stroke-linecap="round"></line>
+
+    
+    <g transform="translate(0 122)">
+      <circle cx="2" cy="3" r="18" fill="#000" opacity="0.35"></circle>
+      <circle cx="0" cy="0" r="18" fill="#B8556A"></circle>
+      <circle cx="0" cy="0" r="16" fill="#C97A8A"></circle>
+      <circle cx="-4" cy="-4" r="5" fill="#F2D08C" opacity="0.65"></circle>
+      
+      <circle cx="0" cy="0" r="3" fill="#7A2B3A" opacity="0.5"></circle>
+    </g>
+  </g>
+
+  
+  <circle cx="512" cy="512" r="380" fill="none" stroke="#E8B86A" stroke-width="2" opacity="0.18"></circle>
+</svg>

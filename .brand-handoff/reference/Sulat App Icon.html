@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>sulat · App Icon</title>
+  <link rel="icon" href="icon/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="icon/favicon-32.png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0B1326;
+      --ink-deep: #06091A;
+      --ink-warm: #1A2440;
+      --amber: #E8B86A;
+      --amber-soft: #F2D08C;
+      --paper: #F4E9D2;
+      --rose: #C97A8A;
+    }
+    html, body { margin: 0; padding: 0; background: var(--ink-deep); color: var(--amber); font-family: "Cormorant Garamond", Georgia, serif; }
+    body { min-height: 100vh; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 64px 32px 120px; }
+    h1 { font-style: italic; font-weight: 500; font-size: 56px; margin: 0 0 4px; letter-spacing: -0.02em; line-height: 1; }
+    h1 .dot { color: var(--amber-soft); }
+    .lead { font-style: italic; font-size: 18px; color: rgba(242,208,140,0.75); margin: 0 0 6px; }
+    .meta { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(232,184,106,0.5); margin-bottom: 56px; }
+
+    .section { margin-top: 72px; }
+    .section h2 { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: rgba(232,184,106,0.65); font-weight: 500; margin: 0 0 6px; }
+    .section .sub { font-style: italic; font-size: 16px; color: rgba(242,208,140,0.55); margin: 0 0 28px; }
+
+    /* Hero */
+    .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .hero-img { width: 100%; aspect-ratio: 1; max-width: 460px; border-radius: 22%; box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 80px rgba(232,184,106,0.12); }
+
+    /* Size grid */
+    .sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 28px; padding: 36px; background: var(--ink); border-radius: 18px; border: 1px solid rgba(232,184,106,0.1); }
+    .size-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .size-item img { display: block; box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+    .size-label { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 2px; color: rgba(232,184,106,0.55); }
+
+    /* Context grid */
+    .contexts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .ctx { background: var(--ink); border-radius: 18px; border: 1px solid rgba(232,184,106,0.1); padding: 28px; display: flex; flex-direction: column; gap: 18px; align-items: center; }
+    .ctx-title { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,184,106,0.55); align-self: flex-start; }
+
+    /* iOS home screen mock */
+    .ios-home {
+      width: 220px; aspect-ratio: 9/19;
+      background: linear-gradient(180deg, #1B2342 0%, #0F1730 100%);
+      border-radius: 32px; padding: 20px 16px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      align-content: start;
+      border: 4px solid #2a3556;
+      position: relative;
+    }
+    .ios-home::before {
+      content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+      width: 60px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.4);
+    }
+    .ios-home .app { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .ios-home .app .icn {
+      width: 38px; height: 38px; border-radius: 10px;
+      background-size: cover; background-color: rgba(255,255,255,0.1);
+    }
+    .ios-home .app .name { font-family: "SF Pro", system-ui, sans-serif; font-size: 8px; color: #fff; opacity: 0.85; }
+    .ios-home .app.sulat .icn {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 14px rgba(232,184,106,0.4);
+    }
+
+    /* Browser tab mock */
+    .browser {
+      width: 320px; background: #2a2a2a; border-radius: 10px; overflow: hidden;
+      border: 1px solid #3a3a3a;
+    }
+    .browser-bar { background: #1f1f1f; padding: 8px; display: flex; gap: 8px; align-items: center; }
+    .tab {
+      background: #2a2a2a; padding: 6px 10px; border-radius: 6px;
+      display: flex; align-items: center; gap: 6px;
+      font-family: system-ui, sans-serif; font-size: 11px; color: #ddd;
+    }
+    .tab img { width: 14px; height: 14px; }
+    .browser-body {
+      background: var(--ink); height: 130px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* macOS dock mock */
+    .dock {
+      background: rgba(255,255,255,0.18); backdrop-filter: blur(20px);
+      border-radius: 18px; padding: 10px 14px;
+      display: flex; gap: 10px; align-items: end;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .dock .ic { width: 44px; height: 44px; border-radius: 10px; background-size: cover; background-color: #444; }
+    .dock .ic.sulat { box-shadow: 0 6px 14px rgba(0,0,0,0.4); }
+
+    /* Variants */
+    .variants { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .variant { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .variant img { width: 100%; aspect-ratio: 1; max-width: 200px; box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
+    .variant .label { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,184,106,0.55); }
+
+    /* Specs */
+    .specs { background: var(--ink); border-radius: 18px; padding: 32px; border: 1px solid rgba(232,184,106,0.1); }
+    .specs table { width: 100%; border-collapse: collapse; font-family: "JetBrains Mono", monospace; font-size: 11px; color: rgba(242,208,140,0.85); }
+    .specs td { padding: 8px 0; border-bottom: 1px dashed rgba(232,184,106,0.12); }
+    .specs td:first-child { color: rgba(232,184,106,0.5); width: 40%; text-transform: uppercase; letter-spacing: 1.5px; font-size: 9px; }
+
+    @media (max-width: 800px) {
+      .hero, .contexts, .variants { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="meta">brand · icon · v1</div>
+    <h1>sulat<span class="dot">.</span></h1>
+    <p class="lead">A folded letter, glowing in the night.</p>
+
+    <!-- HERO -->
+    <div class="section hero">
+      <div>
+        <h2>The icon</h2>
+        <p class="sub">Every glow is someone's hello — the icon carries the same warmth as the loading screen and pin glows on the map.</p>
+        <p style="font-size:15px;line-height:1.55;color:rgba(242,208,140,0.7);max-width:380px">A folded letter, flap open, light spilling from inside. The wax seal at the bottom hints at intimacy and trust. Warm amber on deep navy keeps it unmistakable on a crowded home screen.</p>
+      </div>
+      <img src="icon/sulat-icon-1024-rounded.png" class="hero-img" alt="sulat icon" />
+    </div>
+
+    <!-- SIZES -->
+    <div class="section">
+      <h2>Across sizes</h2>
+      <p class="sub">The mark stays legible from 16px favicon up to 1024px App Store master.</p>
+      <div class="sizes">
+        <div class="size-item"><img src="icon/favicon-16.png" width="16" height="16" /><span class="size-label">16</span></div>
+        <div class="size-item"><img src="icon/favicon-32.png" width="32" height="32" /><span class="size-label">32</span></div>
+        <div class="size-item"><img src="icon/favicon-48.png" width="48" height="48" /><span class="size-label">48</span></div>
+        <div class="size-item"><img src="icon/favicon-64.png" width="64" height="64" /><span class="size-label">64</span></div>
+        <div class="size-item"><img src="icon/ios/Icon-87.png" width="87" height="87" style="border-radius:19px" /><span class="size-label">87</span></div>
+        <div class="size-item"><img src="icon/ios/Icon-120.png" width="120" height="120" style="border-radius:27px" /><span class="size-label">120</span></div>
+        <div class="size-item"><img src="icon/ios/Icon-180.png" width="180" height="180" style="border-radius:40px" /><span class="size-label">180</span></div>
+      </div>
+    </div>
+
+    <!-- CONTEXTS -->
+    <div class="section">
+      <h2>In context</h2>
+      <p class="sub">Where the user actually meets it.</p>
+      <div class="contexts">
+        <div class="ctx">
+          <div class="ctx-title">iOS home screen</div>
+          <div class="ios-home">
+            <div class="app"><div class="icn" style="background:#34c759"></div><div class="name">Messages</div></div>
+            <div class="app"><div class="icn" style="background:#1d1d1f"></div><div class="name">Photos</div></div>
+            <div class="app"><div class="icn" style="background:#ff9500"></div><div class="name">Music</div></div>
+            <div class="app sulat"><div class="icn" style="background-image:url(icon/ios/Icon-180.png)"></div><div class="name">sulat</div></div>
+            <div class="app"><div class="icn" style="background:#5856d6"></div><div class="name">Calendar</div></div>
+            <div class="app"><div class="icn" style="background:#af52de"></div><div class="name">Notes</div></div>
+            <div class="app"><div class="icn" style="background:#ff2d55"></div><div class="name">Camera</div></div>
+            <div class="app"><div class="icn" style="background:#5ac8fa"></div><div class="name">Maps</div></div>
+          </div>
+        </div>
+
+        <div class="ctx">
+          <div class="ctx-title">Browser tab</div>
+          <div class="browser">
+            <div class="browser-bar">
+              <div class="tab"><img src="icon/favicon-32.png" /> sulat — letters in the dark</div>
+            </div>
+            <div class="browser-body">
+              <div style="font-style:italic;font-size:32px">sulat<span style="color:var(--amber-soft)">.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctx">
+          <div class="ctx-title">macOS dock</div>
+          <div class="dock">
+            <div class="ic" style="background:#1d1d1f"></div>
+            <div class="ic" style="background:#34c759"></div>
+            <div class="ic sulat" style="background-image:url(icon/sulat-icon-1024-rounded.png);background-size:cover"></div>
+            <div class="ic" style="background:#ff9500"></div>
+            <div class="ic" style="background:#af52de"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANTS -->
+    <div class="section">
+      <h2>Variants</h2>
+      <p class="sub">Same mark, different containers.</p>
+      <div class="variants">
+        <div class="variant">
+          <img src="icon/sulat-icon-1024-rounded.png" style="border-radius:22%" />
+          <span class="label">iOS · rounded square</span>
+        </div>
+        <div class="variant">
+          <img src="icon/android/ic_launcher_round.png" style="border-radius:50%" />
+          <span class="label">Android · round</span>
+        </div>
+        <div class="variant">
+          <img src="icon/sulat-icon-1024.png" />
+          <span class="label">Square · master</span>
+        </div>
+        <div class="variant">
+          <img src="icon/sulat-icon-1024-rounded.png" style="border-radius:38%" />
+          <span class="label">Squircle</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPECS -->
+    <div class="section">
+      <h2>Asset bundle</h2>
+      <p class="sub">Everything you need to ship.</p>
+      <div class="specs">
+        <table>
+          <tr><td>Master SVG</td><td>icon/sulat-icon-master.svg</td></tr>
+          <tr><td>App Store master</td><td>icon/sulat-icon-1024.png · icon/sulat-icon-1024-rounded.png</td></tr>
+          <tr><td>iOS icon set</td><td>icon/ios/Icon-{20,29,40,58,60,76,80,87,120,152,167,180,1024}.png</td></tr>
+          <tr><td>Apple touch icon</td><td>icon/apple-touch-icon.png · 180×180</td></tr>
+          <tr><td>Android adaptive</td><td>icon/android/ic_launcher_foreground.png · ic_launcher_background.png</td></tr>
+          <tr><td>Android legacy</td><td>icon/android/ic_launcher.png · ic_launcher_round.png</td></tr>
+          <tr><td>Favicon (multi-res ICO)</td><td>icon/favicon.ico · 16/32/48</td></tr>
+          <tr><td>Favicon PNGs</td><td>icon/favicon-{16,32,48,64,96,128,192,256,512}.png</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- HTML SNIPPET -->
+    <div class="section">
+      <h2>Drop-in HTML</h2>
+      <p class="sub">Paste into your &lt;head&gt;.</p>
+      <pre style="background:var(--ink);border:1px solid rgba(232,184,106,0.1);border-radius:14px;padding:24px;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(242,208,140,0.85);overflow-x:auto;line-height:1.6">&lt;link rel="icon" href="/favicon.ico" sizes="any"&gt;
+&lt;link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32"&gt;
+&lt;link rel="icon" type="image/png" href="/favicon-192.png" sizes="192x192"&gt;
+&lt;link rel="apple-touch-icon" href="/apple-touch-icon.png"&gt;
+&lt;meta name="theme-color" content="#0B1326"&gt;</pre>
+    </div>
+  </div>
+</body>
+</html>
