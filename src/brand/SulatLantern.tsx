@@ -1,4 +1,5 @@
-import { View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Platform, View } from 'react-native';
 
 const SVG = `
 <svg viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
@@ -35,13 +36,25 @@ export interface SulatLanternProps {
 
 export function SulatLantern({ width }: SulatLanternProps) {
   const height = Math.round(width * 38 / 28);
-  // dangerouslySetInnerHTML on a View — under react-native-web this becomes a div, which honors the prop.
-  // Web-only by design; on native this renders an empty wrapper (acceptable until the deferred native pass).
+  const ref = useRef<View | null>(null);
+
+  // RN-Web strips dangerouslySetInnerHTML from <View>, so we inject the SVG
+  // markup imperatively after mount via the underlying DOM node. The
+  // dangerouslySetInnerHTML prop is kept for tests (which read JSX props, not
+  // real DOM) and as documentation of the intent. Web-only — ref.current on
+  // native is the RN host node, so we guard.
+  useEffect(() => {
+    if (Platform.OS === 'web' && ref.current) {
+      (ref.current as unknown as HTMLElement).innerHTML = SVG;
+    }
+  }, []);
+
   return (
     <View
+      ref={ref}
       testID="sulat-lantern"
       style={{ width, height }}
-      // @ts-ignore — RN-Web's View accepts dangerouslySetInnerHTML on web; native ignores.
+      // @ts-ignore — kept for test assertions; real DOM injection happens via ref above.
       dangerouslySetInnerHTML={{ __html: SVG }}
     />
   );
