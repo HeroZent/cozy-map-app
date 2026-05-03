@@ -68,6 +68,17 @@ jest.mock('@expo/vector-icons', () => ({
 jest.mock('expo-router', () => ({
   useFocusEffect: () => {},
 }));
+jest.mock('@/audio/useBackgroundMusic', () => ({
+  useBackgroundMusic: () => ({
+    isMuted: false,
+    toggleMute: jest.fn(),
+    skipTrack: jest.fn(),
+    duck: jest.fn(),
+    unduck: jest.fn(),
+    currentTrackName: null,
+    isAudioAvailable: false,
+  }),
+}));
 
 import IndexScreen from '../../app/index';
 

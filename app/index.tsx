@@ -27,6 +27,7 @@ import { useNotifications } from '@/data/useNotifications';
 import { MemoryBanner } from '@/notifications/MemoryBanner';
 import { ActivityBanner } from '@/notifications/ActivityBanner';
 import { NotificationSheet } from '@/notifications/NotificationSheet';
+import { useBackgroundMusic } from '@/audio/useBackgroundMusic';
 
 const LazyMapView = React.lazy(() => import('@/map/LazyMapView'));
 
@@ -44,6 +45,7 @@ function MapSkeleton() {
 export default function Home() {
   const { viewport } = useViewport();
   const bbox: [number, number, number, number] = [-180, -85, 180, 85];
+  const bgMusic = useBackgroundMusic();
   const [refreshKey, setRefreshKey] = useState(0);
   const firstFocus = useRef(true);
   useFocusEffect(useCallback(() => {
@@ -268,6 +270,25 @@ export default function Home() {
         <View style={styles.headerInner} pointerEvents="box-none">
           <SulatLogo size={26} />
           <View style={styles.headerRight} pointerEvents="box-none">
+            {bgMusic.isAudioAvailable && (
+              <PressableScale
+                onPress={bgMusic.toggleMute}
+                style={[
+                  styles.iconBtn,
+                  {
+                    backgroundColor: theme.accentDim,
+                    borderColor: theme.border,
+                    borderRadius: theme.radii.full,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={bgMusic.isMuted ? 'volume-mute' : 'volume-high'}
+                  size={20}
+                  color={theme.accent}
+                />
+              </PressableScale>
+            )}
             <PressableScale
               onPress={openProfile}
               style={[
