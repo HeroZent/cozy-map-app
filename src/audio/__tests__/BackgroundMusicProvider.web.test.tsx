@@ -66,4 +66,43 @@ describe('BackgroundMusicProvider — web autoplay unlock', () => {
     });
     expect((player.play as jest.Mock).mock.calls.length).toBe(playCallsBefore);
   });
+
+  // Mobile browsers sometimes deliver only touchend (not pointerdown) as the
+  // activating gesture. Verify touchend also triggers unlock.
+  test('first touchend calls play() (mobile gesture path)', async () => {
+    render(
+      <BackgroundMusicProvider>
+        <Text>x</Text>
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    const playCallsBefore = (player.play as jest.Mock).mock.calls.length;
+    await act(async () => {
+      document.dispatchEvent(new Event('touchend'));
+      await Promise.resolve();
+    });
+    expect((player.play as jest.Mock).mock.calls.length).toBe(playCallsBefore + 1);
+  });
+
+  // Idempotency: subsequent gestures must not call play() again. The unlock
+  // flag guards against duplicate plays, which would otherwise restart audio.
+  test('subsequent gestures do not trigger additional play() calls', async () => {
+    render(
+      <BackgroundMusicProvider>
+        <Text>x</Text>
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    const playCallsBefore = (player.play as jest.Mock).mock.calls.length;
+    await act(async () => {
+      document.dispatchEvent(new Event('pointerdown'));
+      document.dispatchEvent(new Event('click'));
+      document.dispatchEvent(new Event('touchend'));
+      await Promise.resolve();
+    });
+    // Exactly one additional play() — the first event unlocks, the rest are no-ops.
+    expect((player.play as jest.Mock).mock.calls.length).toBe(playCallsBefore + 1);
+  });
 });

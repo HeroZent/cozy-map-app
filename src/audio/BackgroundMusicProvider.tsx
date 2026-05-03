@@ -124,21 +124,35 @@ export function BackgroundMusicProvider({
   }, [isAudioAvailable, tracks, attachEndListener]);
 
   // Web only: silent autoplay is allowed; sound is gated until first user gesture.
-  // Start at webUnlockGain=0; ramp to 1 on first pointerdown.
+  // Start at webUnlockGain=0; ramp to 1 on the first user gesture and (re)play
+  // the player inside that gesture so the browser's autoplay policy accepts it.
   useEffect(() => {
     if (typeof document === 'undefined') return;
     if (!isAudioAvailable) return;
     if (webUnlockGainRef.current === 1) return; // test-mode (tracksOverride) starts unlocked
+
+    let unlocked = false;
     const unlock = () => {
+      if (unlocked) return;
+      unlocked = true;
       webUnlockGainRef.current = 1;
       applyEffectiveVolume();
-      // Browser autoplay policy: the cold-start play() outside a gesture is
-      // rejected. Setting volume=0 doesn't exempt — only the muted property
-      // does. So we (re)play here, inside the pointerdown gesture.
       if (!isMutedRef.current) playerRef.current?.play();
     };
-    document.addEventListener('pointerdown', unlock, { once: true });
-    return () => document.removeEventListener('pointerdown', unlock);
+
+    // Listen on multiple gesture types: pointerdown is reliable on desktop, but
+    // mobile browsers (including Chrome DevTools mobile emulation) sometimes
+    // route the activating gesture only through touchend or click. Capture
+    // phase ensures the listener fires even if a child handler stopPropagations.
+    const events: Array<keyof DocumentEventMap> = ['pointerdown', 'touchend', 'click'];
+    events.forEach((e) =>
+      document.addEventListener(e, unlock, { capture: true })
+    );
+    return () => {
+      events.forEach((e) =>
+        document.removeEventListener(e, unlock, { capture: true })
+      );
+    };
   }, [isAudioAvailable, applyEffectiveVolume]);
 
   // AppState pause/resume — native only. On web we skip this entirely so
