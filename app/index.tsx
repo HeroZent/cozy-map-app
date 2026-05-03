@@ -19,6 +19,7 @@ import { PressableScale } from '@/components/PressableScale';
 import { GlassSurface } from '@/components/GlassSurface';
 import { ClusterStoriesSheet } from '@/cluster/ClusterStoriesSheet';
 import { DraftPinMarker } from '@/compose/DraftPinMarker';
+import { DraftConfirmChip } from '@/compose/DraftConfirmChip';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
@@ -177,6 +178,14 @@ export default function Home() {
               onDragEnd={(loc) => setDraftPhase((p) =>
                 p.kind === 'idle' ? p : { kind: p.kind, coords: { lat: loc.lat, lng: loc.lng } }
               )}
+            />
+          )}
+
+          {draftPhase.kind === 'placing' && (
+            <DraftConfirmChip
+              coords={draftPhase.coords}
+              onWrite={() => setDraftPhase({ kind: 'composing', coords: draftPhase.coords })}
+              onCancel={() => setDraftPhase({ kind: 'idle' })}
             />
           )}
         </LazyMapView>

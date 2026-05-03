@@ -34,6 +34,18 @@ jest.mock('@/compose/DraftPinMarker', () => ({
 jest.mock('@/compose/ComposeSheet', () => ({
   ComposeSheet: () => require('react').createElement(require('react-native').View, { testID: 'compose-sheet' }),
 }));
+jest.mock('@/compose/DraftConfirmChip', () => ({
+  DraftConfirmChip: ({ onWrite, onCancel }: { onWrite: () => void; onCancel: () => void }) => {
+    const { View, Text, Pressable } = require('react-native');
+    const React = require('react');
+    return React.createElement(
+      View,
+      { testID: 'draft-chip' },
+      React.createElement(Pressable, { onPress: onWrite, testID: 'chip-write' }, React.createElement(Text, null, 'Write')),
+      React.createElement(Pressable, { onPress: onCancel, testID: 'chip-cancel' }, React.createElement(Text, null, '✕')),
+    );
+  },
+}));
 jest.mock('@/data/useStories', () => ({ useStories: () => ({ stories: [], loading: false, error: null }) }));
 jest.mock('@/data/useNotifications', () => ({
   useNotifications: () => ({
@@ -100,5 +112,43 @@ describe('draft pin compose flow', () => {
 
     const pin = await findByTestId('draft-pin');
     expect(pin.props.accessibilityLabel).toBe('pin-7.7-125.5');
+  });
+
+  it('chip Write button transitions placing → composing (sheet opens)', async () => {
+    const { queryByTestId } = render(<IndexScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await waitFor(() => expect(onDoubleClickRef.current).toBeTruthy());
+
+    act(() => {
+      onDoubleClickRef.current!({ lat: 14.5, lng: 121.0 });
+    });
+
+    // We're in placing — chip visible, sheet not yet
+    expect(queryByTestId('draft-chip')).toBeTruthy();
+    expect(queryByTestId('compose-sheet')).toBeNull();
+
+    fireEvent.press(queryByTestId('chip-write')!);
+
+    expect(queryByTestId('compose-sheet')).toBeTruthy();
+    // Chip should disappear in composing phase per spec
+    expect(queryByTestId('draft-chip')).toBeNull();
+  });
+
+  it('chip ✕ button transitions placing → idle (pin and chip gone)', async () => {
+    const { queryByTestId } = render(<IndexScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await waitFor(() => expect(onDoubleClickRef.current).toBeTruthy());
+
+    act(() => {
+      onDoubleClickRef.current!({ lat: 14.5, lng: 121.0 });
+    });
+
+    expect(queryByTestId('draft-pin')).toBeTruthy();
+    expect(queryByTestId('draft-chip')).toBeTruthy();
+
+    fireEvent.press(queryByTestId('chip-cancel')!);
+
+    expect(queryByTestId('draft-pin')).toBeNull();
+    expect(queryByTestId('draft-chip')).toBeNull();
   });
 });
