@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -20,6 +21,7 @@ import { StylePicker } from '@/story/StylePicker';
 import { DEFAULT_CARD_STYLE, type CardStyleId } from '@/story/cardStyles';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import { PressableScale } from '@/components/PressableScale';
+import { useBackgroundMusic } from '@/audio/useBackgroundMusic';
 
 export interface ProfileModalProps {
   onClose: () => void;
@@ -33,6 +35,7 @@ export interface ProfileModalProps {
 export function ProfileModal({ onClose, onNavigate, onDeleted, bottomOffset = 0 }: ProfileModalProps) {
   const theme = useTheme();
   const sheetRef = useRef<AnimatedSheetRef>(null);
+  const bgMusic = useBackgroundMusic();
   const { user, loading: userLoading, error: userError } = useUser();
   const { stories, loading: storiesLoading, error: storiesError, deleteStory } = useMyStories();
   const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
@@ -169,6 +172,32 @@ export function ProfileModal({ onClose, onNavigate, onDeleted, bottomOffset = 0 
 
           <View style={[styles.divider, { backgroundColor: theme.borderSoft }]} />
 
+          {/* Music section — only shown when audio is available (manifest non-empty). */}
+          {bgMusic.isAudioAvailable && (
+            <>
+              <Text style={[styles.sectionLabel, { color: theme.textFaint }]}>MUSIC</Text>
+              <View style={styles.musicRow}>
+                <Text style={[styles.musicLabel, { color: theme.textPrimary }]}>Music off</Text>
+                <Switch
+                  value={bgMusic.isMuted}
+                  onValueChange={bgMusic.toggleMute}
+                  trackColor={{ false: theme.borderSoft, true: theme.accent }}
+                  thumbColor={theme.surface}
+                />
+              </View>
+              <PressableScale onPress={bgMusic.skipTrack} style={styles.musicRow}>
+                <Text style={[styles.musicLabel, { color: theme.textPrimary }]}>Skip track</Text>
+                <Text style={[styles.musicAction, { color: theme.accent }]}>↦</Text>
+              </PressableScale>
+              {bgMusic.currentTrackName && (
+                <Text style={[styles.nowPlaying, { color: theme.textFaint }]}>
+                  Now playing: {bgMusic.currentTrackName}
+                </Text>
+              )}
+              <View style={[styles.divider, { backgroundColor: theme.borderSoft }]} />
+            </>
+          )}
+
           {/* Sulat feed */}
           <Text style={[styles.sectionLabel, { color: theme.textFaint, marginBottom: 6 }]}>
             YOUR SULAT
@@ -281,6 +310,17 @@ const styles = StyleSheet.create({
     letterSpacing: 1.05,
     marginBottom: 6,
   },
+
+  /* Music section */
+  musicRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  musicLabel: { fontSize: 14 },
+  musicAction: { fontSize: 18, fontWeight: '600' },
+  nowPlaying: { fontSize: 11, marginTop: 2 },
 
   /* Empty state */
   empty: { alignItems: 'center', paddingVertical: 28 },

@@ -12,6 +12,19 @@ jest.mock('expo-linear-gradient', () => {
   };
 });
 
+// Mock the background music hook so ProfileModal doesn't need a provider in tests.
+jest.mock('@/audio/useBackgroundMusic', () => ({
+  useBackgroundMusic: () => ({
+    isMuted: false,
+    toggleMute: jest.fn(),
+    skipTrack: jest.fn(),
+    duck: jest.fn(),
+    unduck: jest.fn(),
+    currentTrackName: null,
+    isAudioAvailable: false,
+  }),
+}));
+
 // Mutable variables — set per test
 let mockDisplayHandle: string | null = null;
 let mockPreferredStyle = 'a';
