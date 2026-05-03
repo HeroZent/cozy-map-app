@@ -97,14 +97,11 @@ Ships with an empty array initially; the user drops MP3s into `assets/audio/` an
 Pure functions, no side effects:
 
 ```ts
-export function createBag(trackIds: string[]): string[];
-export function drawNext(
-  bag: string[],
-  lastPlayedId?: string
-): { next: string; remaining: string[] };
+export function createBag(trackIds: string[], lastPlayedId?: string): string[];
+export function drawNext(bag: string[]): { next: string; remaining: string[] };
 ```
 
-`drawNext` returns one item and the remaining bag. When the bag is exhausted, the caller refills via `createBag`. Passing `lastPlayedId` ensures that the refilled bag never places that id at the top — preventing the "track plays twice in a row across a bag boundary" edge case.
+`drawNext` returns one item and the remaining bag. When the bag is exhausted, the caller refills via `createBag`. Passing `lastPlayedId` to `createBag` ensures that the refilled bag never places that id at the top — preventing the "track plays twice in a row across a bag boundary" edge case.
 
 ### `audioSession.ts`
 
@@ -161,7 +158,7 @@ Thin `useContext` wrapper. Throws a clear error if used outside the provider. Re
 1. `playbackStatusUpdate` fires with `didJustFinish: true`.
 2. Set `currentTrackId = null` (UI shows "—" briefly).
 3. `setTimeout` 1500ms.
-4. `drawNext(bag, lastPlayedId)`. If `bag.empty`, `createBag()` and draw again.
+4. `drawNext(bag)`. If `bag.empty`, `createBag(allTrackIds, lastPlayedId)` and draw again.
 5. `player.replace(nextSource)` → set volume → `player.play()`. Update `currentTrackId`.
 
 ### Skip pressed

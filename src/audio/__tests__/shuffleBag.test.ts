@@ -22,6 +22,17 @@ describe('shuffleBag', () => {
     expect(remaining).toEqual([]);
   });
 
+  test('drawNext throws on empty bag', () => {
+    expect(() => drawNext([])).toThrow('drawNext called on empty bag');
+  });
+
+  test('createBag with lastPlayedId and 2-item input never places it at the top', () => {
+    for (let i = 0; i < 200; i++) {
+      const bag = createBag(['a', 'b'], 'a');
+      expect(bag[0]).not.toBe('a');
+    }
+  });
+
   test('createBag with lastPlayedId never places it at the top', () => {
     // Run many iterations; the first item should never equal lastPlayedId.
     const ids = ['a', 'b', 'c', 'd'];
