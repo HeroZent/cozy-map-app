@@ -162,3 +162,52 @@ describe('BackgroundMusicProvider — track end and skip', () => {
     expect(player.replace).toHaveBeenCalledTimes(1);
   });
 });
+
+function DuckButtons() {
+  const api = useBackgroundMusic();
+  return (
+    <>
+      <Pressable testID="duck-btn" onPress={api.duck}><Text>duck</Text></Pressable>
+      <Pressable testID="unduck-btn" onPress={api.unduck}><Text>unduck</Text></Pressable>
+      <Pressable testID="duck-mute-btn" onPress={api.toggleMute}><Text>mute</Text></Pressable>
+    </>
+  );
+}
+
+describe('BackgroundMusicProvider — duck/unduck', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    __lastPlayer.current = null;
+    AsyncStorage.clear();
+  });
+
+  test('duck() lowers volume to 0.3, unduck() restores to 1.0', async () => {
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <DuckButtons />
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    fireEvent.press(screen.getByTestId('duck-btn'));
+    expect(player.volume).toBe(0.3);
+    fireEvent.press(screen.getByTestId('unduck-btn'));
+    expect(player.volume).toBe(1.0);
+  });
+
+  test('mute + duck + unduck keeps effective volume at 0', async () => {
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <DuckButtons />
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    fireEvent.press(screen.getByTestId('duck-mute-btn'));
+    await flush();
+    fireEvent.press(screen.getByTestId('duck-btn'));
+    expect(player.volume).toBe(0);
+    fireEvent.press(screen.getByTestId('unduck-btn'));
+    expect(player.volume).toBe(0);
+  });
+});

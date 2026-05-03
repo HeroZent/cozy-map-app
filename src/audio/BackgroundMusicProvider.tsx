@@ -27,6 +27,32 @@ export function BackgroundMusicProvider({
   const bagRef = useRef<string[]>([]);
   const lastPlayedIdRef = useRef<string | null>(null);
 
+  const duckLevelRef = useRef(1.0);
+  const webUnlockGainRef = useRef<number>(
+    tracksOverride !== undefined || typeof document === 'undefined' ? 1 : 0
+  );
+  // Mirror isMuted into a ref so applyEffectiveVolume can be a stable callback.
+  // Without this, applyEffectiveVolume would change on every mute toggle and
+  // cause the cold-start useEffect to re-fire, which is incorrect.
+  const isMutedRef = useRef(false);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+
+  const applyEffectiveVolume = useCallback((mutedOverride?: boolean) => {
+    const muted = mutedOverride ?? isMutedRef.current;
+    const v = muted ? 0 : duckLevelRef.current * webUnlockGainRef.current;
+    if (playerRef.current) playerRef.current.volume = v;
+  }, []);
+
+  const duck = useCallback(() => {
+    duckLevelRef.current = 0.3;
+    applyEffectiveVolume();
+  }, [applyEffectiveVolume]);
+
+  const unduck = useCallback(() => {
+    duckLevelRef.current = 1.0;
+    applyEffectiveVolume();
+  }, [applyEffectiveVolume]);
+
   // Helper: swap to the next track from the bag and play it.
   // Re-used by both the natural-end listener (Task 8 wires the listener) and skipTrack.
   const startNextFromBag = useCallback(() => {
@@ -98,6 +124,7 @@ export function BackgroundMusicProvider({
     setIsMuted((prev) => {
       const next = !prev;
       AsyncStorage.setItem(MUTE_STORAGE_KEY, String(next));
+      applyEffectiveVolume(next);
       if (next) {
         playerRef.current?.pause();
       } else {
@@ -105,7 +132,7 @@ export function BackgroundMusicProvider({
       }
       return next;
     });
-  }, []);
+  }, [applyEffectiveVolume]);
 
   const skipTrack = useCallback(() => {
     if (!playerRef.current) return;
@@ -121,12 +148,12 @@ export function BackgroundMusicProvider({
       isMuted,
       toggleMute,
       skipTrack,
-      duck: () => {},
-      unduck: () => {},
+      duck,
+      unduck,
       currentTrackName,
       isAudioAvailable,
     }),
-    [isMuted, toggleMute, skipTrack, currentTrackName, isAudioAvailable]
+    [isMuted, toggleMute, skipTrack, duck, unduck, currentTrackName, isAudioAvailable]
   );
 
   return (
