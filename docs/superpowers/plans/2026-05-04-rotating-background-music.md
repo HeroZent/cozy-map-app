@@ -788,7 +788,7 @@ Run:
 ```
 npm test -- --silent src/audio/__tests__/BackgroundMusicProvider.test.tsx
 ```
-Expected: 3 new failures (mute toggle tests).
+Expected: 2 new failures (mute toggle tests).
 
 - [ ] **Step 3: Implement toggleMute**
 
@@ -934,13 +934,13 @@ Run:
 ```
 npm test -- --silent src/audio/__tests__/BackgroundMusicProvider.test.tsx
 ```
-Expected: 8 tests passing (5 prior + 3 mute toggle).
+Expected: 6 tests passing (4 prior from Tasks 5–6 + 2 mute toggle).
 
 - [ ] **Step 5: Commit**
 
 ```
 git add src/audio/BackgroundMusicProvider.tsx src/audio/__tests__/BackgroundMusicProvider.test.tsx
-git commit -m "feat(audio): toggleMute with persistence and yield-takeover"
+git commit -m "feat(audio): toggleMute with persistence + rotation infrastructure"
 ```
 
 ---
@@ -1044,7 +1044,7 @@ Run:
 ```
 npm test -- --silent src/audio/__tests__/BackgroundMusicProvider.test.tsx
 ```
-Expected: 10 tests passing.
+Expected: 8 tests passing (6 prior + 2 new).
 
 - [ ] **Step 5: Commit**
 

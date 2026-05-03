@@ -107,6 +107,11 @@ export function BackgroundMusicProvider({
     });
   }, []);
 
+  const skipTrack = useCallback(() => {
+    if (!playerRef.current) return;
+    startNextFromBag();
+  }, [startNextFromBag]);
+
   const currentTrackName = currentTrackId
     ? tracks.find((t) => t.id === currentTrackId)?.displayName ?? null
     : null;
@@ -115,13 +120,13 @@ export function BackgroundMusicProvider({
     () => ({
       isMuted,
       toggleMute,
-      skipTrack: () => {},
+      skipTrack,
       duck: () => {},
       unduck: () => {},
       currentTrackName,
       isAudioAvailable,
     }),
-    [isMuted, toggleMute, currentTrackName, isAudioAvailable]
+    [isMuted, toggleMute, skipTrack, currentTrackName, isAudioAvailable]
   );
 
   return (

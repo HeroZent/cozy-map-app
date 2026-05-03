@@ -10,11 +10,13 @@ const fakeTracks = [
   { id: 't2', displayName: 'Track 2', source: 2 as unknown as number },
 ];
 
-// Flush a few microtasks so async useEffect chains can settle.
+// Flush microtasks AND drain one macrotask cycle so async useEffect chains
+// and setTimeout(0) callbacks (used in the natural-end track transition) can
+// both settle.
 async function flush() {
   await Promise.resolve();
   await Promise.resolve();
-  await Promise.resolve();
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
 function Probe() {
@@ -112,5 +114,51 @@ describe('BackgroundMusicProvider — mute toggle', () => {
     await flush();
     expect(__lastPlayer.current?.play).toHaveBeenCalledTimes(1);
     expect(await AsyncStorage.getItem('@sulat:bgmuted')).toBe('false');
+  });
+});
+
+function SkipButton() {
+  const api = useBackgroundMusic();
+  return <Pressable testID="skip-btn" onPress={api.skipTrack}><Text>skip</Text></Pressable>;
+}
+
+describe('BackgroundMusicProvider — track end and skip', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    __lastPlayer.current = null;
+    AsyncStorage.clear();
+  });
+
+  test('on track end (with trackGapMs=0), advances to next track via replace()', async () => {
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks} trackGapMs={0}>
+        <Text>x</Text>
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    // createAudioPlayer auto-loads the first track — no replace() yet.
+    expect(player.replace).toHaveBeenCalledTimes(0);
+    expect(player.play).toHaveBeenCalledTimes(1);
+    player.__emitFinish();
+    // setTimeout(0) fires on the next macrotask; flushes drain the chain.
+    await flush();
+    await flush();
+    expect(player.replace).toHaveBeenCalledTimes(1);
+    expect(player.play).toHaveBeenCalledTimes(2);
+  });
+
+  test('skipTrack advances immediately with no delay', async () => {
+    render(
+      <BackgroundMusicProvider tracksOverride={fakeTracks}>
+        <SkipButton />
+      </BackgroundMusicProvider>
+    );
+    await flush();
+    const player = __lastPlayer.current!;
+    expect(player.replace).toHaveBeenCalledTimes(0);
+    fireEvent.press(screen.getByTestId('skip-btn'));
+    await flush();
+    expect(player.replace).toHaveBeenCalledTimes(1);
   });
 });
