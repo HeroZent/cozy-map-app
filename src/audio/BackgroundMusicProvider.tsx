@@ -115,7 +115,13 @@ export function BackgroundMusicProvider({
       lastPlayedIdRef.current = next;
 
       applyEffectiveVolume(muted);
-      if (!muted) player.play();
+      // On web, defer the first play() to the gesture-unlock effect. Some
+      // mobile browsers "taint" an Audio element after a rejected cold-start
+      // play() — subsequent play() calls on the same element get rejected
+      // even when fired inside a real user gesture. Skipping the cold-start
+      // play() keeps the element pristine until the first tap. Native
+      // platforms have no autoplay policy, so we play immediately there.
+      if (!muted && Platform.OS !== 'web') player.play();
     })();
     return () => {
       cancelled = true;
