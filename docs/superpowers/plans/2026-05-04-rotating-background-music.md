@@ -333,7 +333,10 @@ describe('audioSession', () => {
   test('configureAudioSession is a no-op on web', async () => {
     jest.resetModules();
     jest.doMock('react-native', () => ({ Platform: { OS: 'web' } }));
-    const { configureAudioSession: webImpl } = await import('../audioSession');
+    // Use require() rather than await import() — Jest's CJS module system
+    // re-evaluates require() after jest.resetModules() without needing
+    // --experimental-vm-modules.
+    const { configureAudioSession: webImpl } = require('../audioSession');
     await webImpl();
     expect(setAudioModeAsync).not.toHaveBeenCalled();
   });
