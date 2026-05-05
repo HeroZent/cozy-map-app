@@ -8,6 +8,8 @@ import { ReactionBar } from '@/reactions/ReactionBar';
 import { FlagSheet } from '@/reactions/FlagSheet';
 import { ReplyThread } from '@/replies/ReplyThread';
 import { markSeen } from '@/profile/useUnreadReplies';
+import { useReadStories } from '@/data/useReadStories';
+import { StarToggle } from './StarToggle';
 import { AnimatedSheet, type AnimatedSheetRef } from '@/components/AnimatedSheet';
 import { PressableScale } from '@/components/PressableScale';
 import { StoryCard } from './StoryCard';
@@ -75,6 +77,18 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
   //     your own sulat — handy for test data and for early users posting
   //     under throwaway claimed handles.
   const { user: currentUser } = useUser();
+  const { markRead } = useReadStories();
+
+  // Auto-mark the story as read on mount; the kv write is fire-and-forget.
+  // Re-fires when the user navigates between different stories without
+  // unmounting the sheet (story.id is stable per story).
+  useEffect(() => {
+    markRead(story.id).catch(() => {
+      // Persistence failure is non-blocking — in-memory state is already
+      // updated optimistically inside markRead.
+    });
+  }, [story.id, markRead]);
+
   const isOwnSulat = currentUser?.id === story.author_id;
   const handle = isOwnSulat ? 'anon' : (story.display_handle ?? 'anon');
 
@@ -166,6 +180,7 @@ export function StorySheet({ story, onClose, onReacted, bottomOffset = 0 }: Stor
           </View>
 
           <View style={styles.headerRight}>
+            <StarToggle storyId={story.id} />
             {!flagged && (
               <PressableScale
                 onPress={() => setFlagOpen((v) => !v)}
