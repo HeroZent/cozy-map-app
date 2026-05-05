@@ -10,6 +10,9 @@ export interface PinMarkerProps {
   reactionCount?: number;
   /** Number of replies on this story. Surfaces as a small badge on the pin. */
   replyCount?: number;
+  /** When true, render a small star glyph overlay so the pin remains
+   *  recognizable even when the user has many sulat starred. */
+  isStarred?: boolean;
 }
 
 /**
@@ -24,7 +27,7 @@ export interface PinMarkerProps {
  *   • Reply badge:  amber numerical pill at the bottom-right when ≥1 reply
  *     (signals there's a conversation happening — worth opening).
  */
-export function PinMarker({ mood, isMemory, reactionCount = 0, replyCount = 0 }: PinMarkerProps) {
+export function PinMarker({ mood, isMemory, reactionCount = 0, replyCount = 0, isStarred = false }: PinMarkerProps) {
   const theme = useTheme();
   const moodEntry = getMoodById(mood);
 
@@ -71,6 +74,17 @@ export function PinMarker({ mood, isMemory, reactionCount = 0, replyCount = 0 }:
           ]}
         >
           {theme.pinMemory.decoration}
+        </Text>
+      )}
+
+      {isStarred && (
+        <Text
+          style={[
+            styles.starOverlay,
+            { color: theme.accent, textShadowColor: theme.accentSoft },
+          ]}
+        >
+          ★
         </Text>
       )}
 
@@ -130,6 +144,14 @@ const styles = StyleSheet.create({
     top: -3,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
+  },
+  starOverlay: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    fontSize: 12,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
   },
 
   /* Reply badge — small amber pill at the bottom-right of the pin */
