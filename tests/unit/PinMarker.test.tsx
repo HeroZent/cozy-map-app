@@ -20,3 +20,21 @@ test('Memory pin renders decoration mark', () => {
   expect(getByText('🕯️')).toBeTruthy();
   expect(getByText('✦')).toBeTruthy();
 });
+
+test('renders the ★ glyph when isStarred=true', () => {
+  const { getByText } = render(
+    <ThemeProvider>
+      <PinMarker mood="hopeful" isMemory={false} isStarred />
+    </ThemeProvider>,
+  );
+  expect(getByText('★')).toBeTruthy();
+});
+
+test('does not render the ★ glyph when isStarred is false or omitted', () => {
+  const { queryByText } = render(
+    <ThemeProvider>
+      <PinMarker mood="hopeful" isMemory={false} />
+    </ThemeProvider>,
+  );
+  expect(queryByText('★')).toBeNull();
+});
