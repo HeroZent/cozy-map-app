@@ -4,6 +4,7 @@ import { Pressable } from 'react-native';
 import { PinMarker } from './PinMarker';
 import { ClusterMarker } from './ClusterMarker';
 import { useClusters, type StoryFeature, CLUSTER_MAX_ZOOM } from './useClusters';
+import { useReadStories } from '@/data/useReadStories';
 import type { Story } from '@/data/types';
 
 /** Coordinate epsilon for "essentially the same spot." 1e-5 degrees ≈ 1.1m
@@ -54,6 +55,7 @@ export interface StoryPinsProps {
  */
 export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: StoryPinsProps) {
   const { current: map } = useMap();
+  const { isStarred } = useReadStories();
   const [viewBbox, setViewBbox] = useState<[number, number, number, number]>(bbox);
 
 
@@ -289,6 +291,7 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
                 isMemory={story.is_memory}
                 reactionCount={reactionCount}
                 replyCount={replyCount}
+                isStarred={isStarred(story.id)}
               />
             </Pressable>
           </Marker>

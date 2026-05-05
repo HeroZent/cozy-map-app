@@ -7,6 +7,7 @@ import { PinMarker } from './PinMarker';
 import { ClusterMarker } from './ClusterMarker';
 import { useClusters, type StoryFeature } from './useClusters';
 import { useMapCamera } from './MapContext';
+import { useReadStories } from '@/data/useReadStories';
 import type { Story } from '@/data/types';
 
 const MemoPinMarker = memo(PinMarker);
@@ -37,6 +38,7 @@ export interface StoryPinsProps {
  */
 export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: StoryPinsProps) {
   const cameraRef = useMapCamera();
+  const { isStarred } = useReadStories();
   // Native bbox tracking is harder (no straight equivalent of getBounds() on
   // the camera ref). Fall back to using the prop bbox for now — supercluster
   // will still cluster correctly, just without viewport optimisation. Future
@@ -183,6 +185,7 @@ export function StoryPins({ stories, zoom, bbox, onSelect, onClusterSelect }: St
                 isMemory={story.is_memory}
                 reactionCount={reactionCount}
                 replyCount={replyCount}
+                isStarred={isStarred(story.id)}
               />
             </Pressable>
           </Marker>
