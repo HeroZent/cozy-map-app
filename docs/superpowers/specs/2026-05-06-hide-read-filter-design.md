@@ -44,6 +44,7 @@ Existing files modified:
 interface ReadStoriesAPI {
   read: Set<string>;
   starred: Set<string>;
+  hydrating: boolean;
   isRead: (id: string) => boolean;
   isStarred: (id: string) => boolean;
   markRead: (id: string) => Promise<void>;
@@ -53,6 +54,8 @@ interface ReadStoriesAPI {
 
 State lives in two `Set<string>` React state pieces. On mount, the hook scans AsyncStorage for keys matching the `sulat.read.*` and `sulat.starred.*` namespaces and rehydrates the sets. Writes go through `kvSet` and update the in-memory set immediately (optimistic).
 
+`hydrating` is `true` from mount until both sets have been rehydrated, then flips `false`. Consumers (specifically `app/index.tsx`'s loader-gating logic) can use this to keep the loading screen visible until read/starred state is ready, so the map never briefly shows pins that should be filtered out.
+
 A pure-set return shape (rather than a `(id) => boolean` callback) lets the consumer build a memoized filter without re-creating it on every keystroke.
 
 ### `useUnreadFilter`
@@ -60,11 +63,12 @@ A pure-set return shape (rather than a `(id) => boolean` callback) lets the cons
 ```ts
 interface UnreadFilterAPI {
   unreadOnly: boolean;
+  hydrating: boolean;
   toggle: () => Promise<void>;
 }
 ```
 
-Single boolean piece of state, persisted under `sulat.filters.unreadOnly`. Defaults to `false` (filter off).
+Single boolean piece of state, persisted under `sulat.filters.unreadOnly`. Defaults to `false` (filter off). `hydrating` mirrors the same contract as `useReadStories.hydrating` — true until the persisted boolean has been read.
 
 ### `UnreadFilterChip`
 
@@ -109,6 +113,24 @@ const visibleStories = useMemo(
 ## Read-marking trigger
 
 `StorySheet` calls `markRead(story.id)` in a `useEffect(() => { markRead(story.id); }, [story.id])` on mount. Subsequent re-renders for the same story don't re-call (stable id). The async write to AsyncStorage doesn't block render.
+
+## Loader integration
+
+The existing `SulatLoader` (lanterns-rising splash) currently dismisses when `useStories().loading === false` plus the 1200ms minimum-show floor. To prevent the brief window where the map shows pins before read/starred state is ready, the gating signal in [app/index.tsx](cozy-map-app/app/index.tsx) becomes a combined boolean:
+
+```ts
+const { stories, loading: storiesLoading } = useStories(...);
+const { hydrating: readsHydrating } = useReadStories();
+const { hydrating: filterHydrating } = useUnreadFilter();
+
+const loaderGating = useLoaderGating(
+  storiesLoading || readsHydrating || filterHydrating
+);
+```
+
+`useLoaderGating` already supports any-truthy-keeps-loader-visible semantics (the existing implementation just checks `loading`); passing the OR'd boolean works without changing `useLoaderGating`. The 1200ms minimum-show floor and 8s hard cap continue to apply unchanged.
+
+This means: cold start covers stories fetch + read/starred AsyncStorage hydration + filter persistence read in a single visual moment. By the time the loader fades, the filter is already correctly applied to the visible pins.
 
 ## Persistence
 
@@ -199,7 +221,7 @@ A test in `app/__tests__/` (or `tests/integration/`) that:
 ## Risks and mitigations
 
 - **`AsyncStorage.getAllKeys()` performance at scale.** A user who reads 10,000 sulat over a year would have 10k keys with the `sulat.read.` prefix. `getAllKeys` is fast (~10ms for 10k keys on web; native is comparable). Mitigation: not needed for v1; if it becomes an issue, switch to a single JSON-encoded set under `sulat.read` (one key holding an array).
-- **Initial hydration delay.** While `useReadStories` is loading on cold start, the filter would briefly show all stories. Mitigation: the filter chip itself stays in sync (`useUnreadFilter` resolves quickly); read/starred sets resolve within ~50ms. Acceptable flicker for v1.
+- **Initial hydration delay.** While `useReadStories` and `useUnreadFilter` are loading on cold start, the filter would briefly show all stories. Mitigation: the `SulatLoader` stays visible until both hooks finish hydrating (see "Loader integration" above). The user never sees an unfiltered map flash before the filter applies.
 - **Filter chip + author exemption together.** A user who has authored many sulat will see "Unread only" still showing many pins (their own). This is intended — they wrote those, they're not "noise." Surface no warning.
 - **`markRead` race with `StorySheet` close-then-reopen.** Set semantics make this a no-op.
 
@@ -219,7 +241,7 @@ A test in `app/__tests__/` (or `tests/integration/`) that:
 
 **Modified:**
 
-- `app/index.tsx` — filter the stories array; render the new chip
+- `app/index.tsx` — filter the stories array; render the new chip; OR the new `hydrating` flags into the existing `useLoaderGating` call
 - `src/story/StorySheet.tsx` — call `markRead` on mount; render `<StarToggle />`
 - `src/map/PinMarker.tsx` — overlay ✦ when starred
 
