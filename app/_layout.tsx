@@ -2,6 +2,8 @@ import { Stack } from 'expo-router';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { useUser } from '@/data/useUser';
 import { BackgroundMusicProvider } from '@/audio/BackgroundMusicProvider';
+import { ReadStoriesProvider } from '@/data/useReadStories';
+import { UnreadFilterProvider } from '@/data/useUnreadFilter';
 
 // Handwritten card fonts are loaded via <link> in public/index.html (Google Fonts CDN).
 // This keeps ~400 KB of font data out of the JS bundle.
@@ -16,8 +18,12 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <BackgroundMusicProvider>
-        <UserInit />
-        <Stack screenOptions={{ headerShown: false }} />
+        <ReadStoriesProvider>
+          <UnreadFilterProvider>
+            <UserInit />
+            <Stack screenOptions={{ headerShown: false }} />
+          </UnreadFilterProvider>
+        </ReadStoriesProvider>
       </BackgroundMusicProvider>
     </ThemeProvider>
   );

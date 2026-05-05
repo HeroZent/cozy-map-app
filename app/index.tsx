@@ -510,10 +510,13 @@ export default function Home() {
             <Text style={styles.navIcon}>🪔</Text>
             <Text style={[styles.navLabel, { color: theme.textMuted }]}>Lantern</Text>
           </PressableScale>
-
-          <UnreadFilterChip />
         </View>
       </GlassSurface>
+
+      {/* Floating "Unread only" filter chip — anchored lower-right above the dock */}
+      <View style={styles.unreadChipFloat} pointerEvents="box-none">
+        <UnreadFilterChip />
+      </View>
 
       {/* Cold-start loader — overlays everything until initial Supabase data resolves */}
       {loaderGating.mounted && (
@@ -631,6 +634,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     letterSpacing: 0.2,
+  },
+
+  /* ── Floating unread chip ───────────────── */
+  unreadChipFloat: {
+    position: 'absolute',
+    right: 16,
+    bottom: NAV_HEIGHT + 16,
+    alignItems: 'flex-end',
   },
 
   /* ── FAB (compose) ───────────────────────── */

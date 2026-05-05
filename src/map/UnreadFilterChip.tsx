@@ -20,21 +20,28 @@ export function UnreadFilterChip() {
       accessibilityRole="button"
       accessibilityState={{ selected: unreadOnly }}
       accessibilityLabel={unreadOnly ? 'Showing unread only — tap to show all' : 'Show unread only'}
-      style={styles.btn}
+      style={[
+        styles.btn,
+        { borderColor: unreadOnly ? theme.accent : theme.border },
+      ]}
     >
-      <Text style={[styles.icon, { opacity: unreadOnly ? 1 : 0.85 }]}>✉︎</Text>
-      <Text style={[styles.label, { color: labelColor }]}>Unread</Text>
+      <Text style={[styles.icon, { color: labelColor, opacity: unreadOnly ? 1 : 0.85 }]}>✉︎</Text>
+      <Text style={[styles.label, { color: labelColor }]}>{unreadOnly ? 'Unread only' : 'Unread'}</Text>
     </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   btn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(20, 26, 58, 0.85)',
+    borderRadius: 999,
+    borderWidth: 1,
   },
-  icon: { fontSize: 17 },
-  label: { fontSize: 11, letterSpacing: 0.3 },
+  icon: { fontSize: 14 },
+  label: { fontSize: 12, letterSpacing: 0.5 },
 });

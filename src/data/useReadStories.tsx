@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { kvGet, kvSet } from '@/lib/persistence';
 
 const READ_KEY = 'sulat.read';
@@ -30,7 +30,15 @@ function safeParseIdArray(json: string | null): string[] {
   return [];
 }
 
-export function useReadStories(): ReadStoriesAPI {
+const ReadStoriesContext = createContext<ReadStoriesAPI | null>(null);
+
+/**
+ * Provider that owns the singleton read + starred state for the whole app.
+ * Mount once, near the root. All consumers (StorySheet, StarToggle, StoryPins,
+ * app/index.tsx) read from the same source so a markRead in one component
+ * propagates to every other consumer's render.
+ */
+export function ReadStoriesProvider({ children }: { children: ReactNode }) {
   const [read, setRead] = useState<Set<string>>(() => new Set());
   const [starred, setStarred] = useState<Set<string>>(() => new Set());
   const [hydrating, setHydrating] = useState(true);
@@ -84,5 +92,18 @@ export function useReadStories(): ReadStoriesAPI {
   const isRead = useCallback((id: string) => read.has(id), [read]);
   const isStarred = useCallback((id: string) => starred.has(id), [starred]);
 
-  return { read, starred, hydrating, isRead, isStarred, markRead, toggleStarred };
+  const value: ReadStoriesAPI = { read, starred, hydrating, isRead, isStarred, markRead, toggleStarred };
+
+  return <ReadStoriesContext.Provider value={value}>{children}</ReadStoriesContext.Provider>;
+}
+
+/**
+ * Returns the singleton read/starred state. Must be called inside <ReadStoriesProvider />.
+ */
+export function useReadStories(): ReadStoriesAPI {
+  const ctx = useContext(ReadStoriesContext);
+  if (!ctx) {
+    throw new Error('useReadStories must be used inside <ReadStoriesProvider>');
+  }
+  return ctx;
 }

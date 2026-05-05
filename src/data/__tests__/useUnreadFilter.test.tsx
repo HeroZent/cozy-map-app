@@ -1,6 +1,6 @@
 import { render, act, waitFor } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
-import { useUnreadFilter } from '../useUnreadFilter';
+import { useUnreadFilter, UnreadFilterProvider } from '../useUnreadFilter';
 
 const store: Record<string, string> = {};
 
@@ -30,7 +30,7 @@ function Harness({ onApi }: { onApi: (api: ReturnType<typeof useUnreadFilter>) =
 describe('useUnreadFilter', () => {
   test('starts with hydrating=true and unreadOnly=false', () => {
     const apiRef: ReturnType<typeof useUnreadFilter>[] = [];
-    const { getByTestId } = render(<Harness onApi={(api) => apiRef.push(api)} />);
+    const { getByTestId } = render(<UnreadFilterProvider><Harness onApi={(api) => apiRef.push(api)} /></UnreadFilterProvider>);
     expect(getByTestId('hydrating').props.children).toBe('true');
     expect(getByTestId('unreadOnly').props.children).toBe('false');
   });
@@ -38,7 +38,7 @@ describe('useUnreadFilter', () => {
   test('hydrates unreadOnly=true when persisted', async () => {
     store['sulat.filters.unreadOnly'] = 'true';
     const apiRef: ReturnType<typeof useUnreadFilter>[] = [];
-    const { getByTestId } = render(<Harness onApi={(api) => apiRef.push(api)} />);
+    const { getByTestId } = render(<UnreadFilterProvider><Harness onApi={(api) => apiRef.push(api)} /></UnreadFilterProvider>);
     await waitFor(() => expect(getByTestId('hydrating').props.children).toBe('false'));
     expect(getByTestId('unreadOnly').props.children).toBe('true');
   });
@@ -46,14 +46,14 @@ describe('useUnreadFilter', () => {
   test('hydrates unreadOnly=false when persisted as anything other than "true"', async () => {
     store['sulat.filters.unreadOnly'] = 'false';
     const apiRef: ReturnType<typeof useUnreadFilter>[] = [];
-    const { getByTestId } = render(<Harness onApi={(api) => apiRef.push(api)} />);
+    const { getByTestId } = render(<UnreadFilterProvider><Harness onApi={(api) => apiRef.push(api)} /></UnreadFilterProvider>);
     await waitFor(() => expect(getByTestId('hydrating').props.children).toBe('false'));
     expect(getByTestId('unreadOnly').props.children).toBe('false');
   });
 
   test('toggle flips state and persists', async () => {
     const apiRef: ReturnType<typeof useUnreadFilter>[] = [];
-    const { getByTestId } = render(<Harness onApi={(api) => apiRef.push(api)} />);
+    const { getByTestId } = render(<UnreadFilterProvider><Harness onApi={(api) => apiRef.push(api)} /></UnreadFilterProvider>);
     await waitFor(() => expect(getByTestId('hydrating').props.children).toBe('false'));
     await act(async () => {
       await apiRef[apiRef.length - 1].toggle();

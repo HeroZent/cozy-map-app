@@ -58,6 +58,24 @@ jest.mock('@/data/useNotifications', () => ({
   }),
 }));
 jest.mock('@/data/useUser', () => ({ useUser: () => ({ user: { id: 'u1' }, loading: false, error: null }) }));
+jest.mock('@/data/useReadStories', () => ({
+  useReadStories: () => ({
+    read: new Set(),
+    starred: new Set(),
+    hydrating: false,
+    isRead: () => false,
+    isStarred: () => false,
+    markRead: jest.fn().mockResolvedValue(undefined),
+    toggleStarred: jest.fn().mockResolvedValue(undefined),
+  }),
+}));
+jest.mock('@/data/useUnreadFilter', () => ({
+  useUnreadFilter: () => ({
+    unreadOnly: false,
+    hydrating: false,
+    toggle: jest.fn().mockResolvedValue(undefined),
+  }),
+}));
 jest.mock('expo-location', () => ({
   requestForegroundPermissionsAsync: jest.fn().mockResolvedValue({ status: 'denied' }),
   getCurrentPositionAsync: jest.fn(),
