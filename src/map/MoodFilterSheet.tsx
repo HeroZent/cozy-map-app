@@ -54,23 +54,34 @@ export function MoodFilterSheet({ open, onClose }: MoodFilterSheetProps) {
       >
         <View style={styles.header}>
           <Text style={[styles.title, { color: theme.textPrimary }]}>Moods</Text>
-          <PressableScale
-            testID="mood-filter-reset"
-            onPress={() => { if (hasOverride) reset(); }}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !hasOverride }}
-            accessibilityLabel={hasOverride ? 'Reset — show all moods' : 'Reset (nothing to reset)'}
-            style={styles.resetBtn}
-          >
-            <Text
-              style={[
-                styles.resetLabel,
-                { color: hasOverride ? theme.accent : theme.textFaint },
-              ]}
+          <View style={styles.headerActions}>
+            <PressableScale
+              testID="mood-filter-reset"
+              onPress={() => { if (hasOverride) reset(); }}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !hasOverride }}
+              accessibilityLabel={hasOverride ? 'Reset — show all moods' : 'Reset (nothing to reset)'}
+              style={styles.resetBtn}
             >
-              Reset
-            </Text>
-          </PressableScale>
+              <Text
+                style={[
+                  styles.resetLabel,
+                  { color: hasOverride ? theme.accent : theme.textFaint },
+                ]}
+              >
+                Reset
+              </Text>
+            </PressableScale>
+            <PressableScale
+              testID="mood-filter-close"
+              onPress={dismiss}
+              accessibilityRole="button"
+              accessibilityLabel="Close mood filter"
+              style={[styles.closeBtn, { backgroundColor: theme.accentDim, borderColor: theme.border }]}
+            >
+              <Text style={[styles.closeGlyph, { color: theme.accent }]}>✕</Text>
+            </PressableScale>
+          </View>
         </View>
 
         <ScrollView style={styles.list}>
@@ -125,6 +136,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   resetBtn: {
     paddingHorizontal: 6,
     paddingVertical: 4,
@@ -132,6 +148,19 @@ const styles = StyleSheet.create({
   resetLabel: {
     fontSize: 13,
     letterSpacing: 0.3,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeGlyph: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 16,
   },
   list: {
     paddingHorizontal: 8,
