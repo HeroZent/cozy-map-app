@@ -76,6 +76,17 @@ jest.mock('@/data/useUnreadFilter', () => ({
     toggle: jest.fn().mockResolvedValue(undefined),
   }),
 }));
+jest.mock('@/data/useMoodFilter', () => ({
+  useMoodFilter: () => ({
+    selectedMoods: new Set(['regret', 'on_my_mind', 'struggling', 'hopeful', 'memory', 'dream', 'unsent_letter', 'forgiveness']),
+    hydrating: false,
+    hasOverride: false,
+    toggle: jest.fn(),
+    reset: jest.fn(),
+  }),
+}));
+jest.mock('@/map/MoodFilterChip', () => ({ MoodFilterChip: () => null }));
+jest.mock('@/map/MoodFilterSheet', () => ({ MoodFilterSheet: () => null }));
 jest.mock('expo-location', () => ({
   requestForegroundPermissionsAsync: jest.fn().mockResolvedValue({ status: 'denied' }),
   getCurrentPositionAsync: jest.fn(),

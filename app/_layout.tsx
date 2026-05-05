@@ -4,6 +4,7 @@ import { useUser } from '@/data/useUser';
 import { BackgroundMusicProvider } from '@/audio/BackgroundMusicProvider';
 import { ReadStoriesProvider } from '@/data/useReadStories';
 import { UnreadFilterProvider } from '@/data/useUnreadFilter';
+import { MoodFilterProvider } from '@/data/useMoodFilter';
 
 // Handwritten card fonts are loaded via <link> in public/index.html (Google Fonts CDN).
 // This keeps ~400 KB of font data out of the JS bundle.
@@ -20,8 +21,10 @@ export default function RootLayout() {
       <BackgroundMusicProvider>
         <ReadStoriesProvider>
           <UnreadFilterProvider>
-            <UserInit />
-            <Stack screenOptions={{ headerShown: false }} />
+            <MoodFilterProvider>
+              <UserInit />
+              <Stack screenOptions={{ headerShown: false }} />
+            </MoodFilterProvider>
           </UnreadFilterProvider>
         </ReadStoriesProvider>
       </BackgroundMusicProvider>

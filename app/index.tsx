@@ -27,8 +27,12 @@ import { ClusterStoriesSheet } from '@/cluster/ClusterStoriesSheet';
 import { DraftPinMarker } from '@/compose/DraftPinMarker';
 import { DraftConfirmChip } from '@/compose/DraftConfirmChip';
 import { UnreadFilterChip } from '@/map/UnreadFilterChip';
+import { useMoodFilter } from '@/data/useMoodFilter';
+import { MoodFilterChip } from '@/map/MoodFilterChip';
+import { MoodFilterSheet } from '@/map/MoodFilterSheet';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
+import type { Mood } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
 import { MemoryBanner } from '@/notifications/MemoryBanner';
 import { ActivityBanner } from '@/notifications/ActivityBanner';
@@ -62,17 +66,23 @@ export default function Home() {
   const { user } = useUser();
   const { read, starred, hydrating: readsHydrating } = useReadStories();
   const { unreadOnly, hydrating: filterHydrating } = useUnreadFilter();
-  const loaderGating = useLoaderGating(loading || readsHydrating || filterHydrating);
+  const { selectedMoods, hydrating: moodHydrating } = useMoodFilter();
+  const loaderGating = useLoaderGating(loading || readsHydrating || filterHydrating || moodHydrating);
   const [heatmapOn, setHeatmapOn] = useState(true);
+  const [moodSheetOpen, setMoodSheetOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
   const visibleStories = useMemo(() => {
-    if (!unreadOnly) return stories;
     const meId = user?.id;
-    return stories.filter(
-      (s) => s.author_id === meId || starred.has(s.id) || !read.has(s.id)
-    );
-  }, [stories, unreadOnly, read, starred, user?.id]);
+    return stories.filter((s) => {
+      // Mood filter — applies regardless of override; selectedMoods is the
+      // override-aware computed Set (returns all moods when no override).
+      if (!selectedMoods.has(s.mood as Mood)) return false;
+      // Unread filter — composes via AND.
+      if (!unreadOnly) return true;
+      return s.author_id === meId || starred.has(s.id) || !read.has(s.id);
+    });
+  }, [stories, unreadOnly, selectedMoods, read, starred, user?.id]);
 
   // Keep the open story card in sync with fresh data from every refetch.
   // Without this, reactions and reply counts show stale values until the
@@ -126,6 +136,7 @@ export default function Home() {
     setProfileOpen(false);
     setNotifSheetOpen(false);
     setClusterStories(null);
+    setMoodSheetOpen(false);
   };
 
   const openProfile = () => {
@@ -513,10 +524,17 @@ export default function Home() {
         </View>
       </GlassSurface>
 
-      {/* Floating "Unread only" filter chip — anchored lower-right above the dock */}
+      {/* Floating filter chips — anchored lower-right above the dock */}
       <View style={styles.unreadChipFloat} pointerEvents="box-none">
+        <MoodFilterChip onOpen={() => { closeAllSheets(); setMoodSheetOpen(true); }} />
+        <View style={{ height: 8 }} />
         <UnreadFilterChip />
       </View>
+
+      <MoodFilterSheet
+        open={moodSheetOpen}
+        onClose={() => setMoodSheetOpen(false)}
+      />
 
       {/* Cold-start loader — overlays everything until initial Supabase data resolves */}
       {loaderGating.mounted && (
