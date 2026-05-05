@@ -12,6 +12,9 @@ import { LanternSheet } from '@/lantern/LanternSheet';
 import { SettingsSheet } from '@/settings/SettingsSheet';
 import { ProfileModal } from '@/profile/ProfileModal';
 import { useStories } from '@/data/useStories';
+import { useReadStories } from '@/data/useReadStories';
+import { useUnreadFilter } from '@/data/useUnreadFilter';
+import { useUser } from '@/data/useUser';
 import { useViewport } from '@/map/useViewport';
 import { useTheme } from '@/theme/ThemeContext';
 import { SulatLoader } from '@/brand/SulatLoader';
@@ -23,6 +26,7 @@ import { GlassSurface } from '@/components/GlassSurface';
 import { ClusterStoriesSheet } from '@/cluster/ClusterStoriesSheet';
 import { DraftPinMarker } from '@/compose/DraftPinMarker';
 import { DraftConfirmChip } from '@/compose/DraftConfirmChip';
+import { UnreadFilterChip } from '@/map/UnreadFilterChip';
 import type { FlyTarget } from '@/map/MapView';  // import type is erased at build time — safe, no CSS side-effect
 import type { Story } from '@/data/types';
 import { useNotifications } from '@/data/useNotifications';
@@ -55,9 +59,20 @@ export default function Home() {
     setRefreshKey((k) => k + 1);
   }, []));
   const { stories, loading } = useStories({ minLng: bbox[0], minLat: bbox[1], maxLng: bbox[2], maxLat: bbox[3] }, refreshKey);
-  const loaderGating = useLoaderGating(loading);
+  const { user } = useUser();
+  const { read, starred, hydrating: readsHydrating } = useReadStories();
+  const { unreadOnly, hydrating: filterHydrating } = useUnreadFilter();
+  const loaderGating = useLoaderGating(loading || readsHydrating || filterHydrating);
   const [heatmapOn, setHeatmapOn] = useState(true);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+
+  const visibleStories = useMemo(() => {
+    if (!unreadOnly) return stories;
+    const meId = user?.id;
+    return stories.filter(
+      (s) => s.author_id === meId || starred.has(s.id) || !read.has(s.id)
+    );
+  }, [stories, unreadOnly, read, starred, user?.id]);
 
   // Keep the open story card in sync with fresh data from every refetch.
   // Without this, reactions and reply counts show stale values until the
@@ -235,7 +250,7 @@ export default function Home() {
         >
           {heatmapOn && <HeatmapLayer stories={stories} />}
           <StoryPins
-            stories={stories}
+            stories={visibleStories}
             zoom={viewport.zoom}
             bbox={bbox}
             onSelect={(story) => { closeAllSheets(); setSelectedStory(story); }}
@@ -495,6 +510,8 @@ export default function Home() {
             <Text style={styles.navIcon}>🪔</Text>
             <Text style={[styles.navLabel, { color: theme.textMuted }]}>Lantern</Text>
           </PressableScale>
+
+          <UnreadFilterChip />
         </View>
       </GlassSurface>
 
