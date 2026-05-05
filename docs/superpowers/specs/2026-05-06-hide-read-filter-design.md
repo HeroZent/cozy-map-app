@@ -134,17 +134,17 @@ This means: cold start covers stories fetch + read/starred AsyncStorage hydratio
 
 ## Persistence
 
-AsyncStorage keys, all under the existing `sulat.*` namespace:
+Three keys under the existing `sulat.*` namespace, accessed via the project's existing `kvGet`/`kvSet` helpers ([src/lib/persistence.ts](cozy-map-app/src/lib/persistence.ts)). On web, `kvGet`/`kvSet` wrap `localStorage`; on native, they wrap `expo-secure-store`. SecureStore has no list-keys API, so each Set is stored under a single JSON-encoded key rather than per-id keys:
 
 | Key | Value | Purpose |
 |---|---|---|
-| `sulat.read.<storyId>` | `"1"` | Story has been opened by this device |
-| `sulat.starred.<storyId>` | `"1"` | Story is starred for this device |
+| `sulat.read` | JSON array of story IDs, e.g. `'["id1","id2"]'` | Stories opened on this device |
+| `sulat.starred` | JSON array of story IDs | Stories starred on this device |
 | `sulat.filters.unreadOnly` | `"true"` or `"false"` | Filter chip state |
 
-Absence of a `sulat.read.*` key means unread. Absence of a `sulat.starred.*` key means not starred. Storing `"1"` (rather than `"true"`) keeps the value short — a heavy reader could accumulate thousands of read keys.
+The hook hydrates on mount by reading the JSON, parsing, and constructing the in-memory `Set<string>`. Writes serialize the current Set back to JSON via `kvSet`. The serialized payload for a heavy reader (10k story IDs at ~22 chars each plus JSON overhead) is ~250 KB — well under both `localStorage`'s 5 MB quota and `expo-secure-store`'s practical limits.
 
-The hook hydrates by scanning all AsyncStorage keys once on mount via `AsyncStorage.getAllKeys()` filtered to the two prefixes. This is O(total-key-count) but happens once per app load and the `getAllKeys` call is fast even at thousands of keys.
+Race condition note: if two `markRead` or `toggleStarred` calls overlap, both writes serialize their own snapshot of the Set; the second write wins. In the current UX this would only happen if the user opened two `StorySheet`s in rapid succession, which the sheet-stack prevents. Not a concern.
 
 ## Visual treatments
 
@@ -220,7 +220,7 @@ A test in `app/__tests__/` (or `tests/integration/`) that:
 
 ## Risks and mitigations
 
-- **`AsyncStorage.getAllKeys()` performance at scale.** A user who reads 10,000 sulat over a year would have 10k keys with the `sulat.read.` prefix. `getAllKeys` is fast (~10ms for 10k keys on web; native is comparable). Mitigation: not needed for v1; if it becomes an issue, switch to a single JSON-encoded set under `sulat.read` (one key holding an array).
+- **JSON serialization overhead at scale.** A user who reads 10,000 sulat over a year would have a ~250 KB JSON payload at `sulat.read`. Serializing/parsing on cold-start is ~10ms — negligible. Writes happen on each `markRead`, also ~5ms. Acceptable.
 - **Initial hydration delay.** While `useReadStories` and `useUnreadFilter` are loading on cold start, the filter would briefly show all stories. Mitigation: the `SulatLoader` stays visible until both hooks finish hydrating (see "Loader integration" above). The user never sees an unfiltered map flash before the filter applies.
 - **Filter chip + author exemption together.** A user who has authored many sulat will see "Unread only" still showing many pins (their own). This is intended — they wrote those, they're not "noise." Surface no warning.
 - **`markRead` race with `StorySheet` close-then-reopen.** Set semantics make this a no-op.
